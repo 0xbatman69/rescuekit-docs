@@ -39,11 +39,11 @@ RescueKit enables victims of private key compromises to atomically rescue trappe
   - Rate limiting, anonymized SHA-256 client tokens, and RFC headers
   - Zero-key two-pass client signing tutorial (TypeScript / Viem)
 
-### 4. Technical Reference & Error Troubleshooting
-- [Security Model & Troubleshooting Directory](./reference/smart-contracts-and-errors.md)
+### 4. Smart Contract Architecture & Reference
+- [Security Architecture & Smart Contract Reference](./reference/smart-contracts-and-errors.md)
   - Non-custodial architecture, EIP-7702 delegation, and fee-first settlement
   - Replay protection, private mempool execution, and anti-exploit guarantees
-  - Complete on-chain and UI error directory: contract reverts, input validation, and RPC resolutions
+  - Complete on-chain contract revert directory and resolution guidelines
 
 ---
 

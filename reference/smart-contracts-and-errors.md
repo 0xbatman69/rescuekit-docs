@@ -1,6 +1,6 @@
-# Security Model & Troubleshooting Directory
+# Security Architecture & Smart Contract Reference
 
-> Architectural security guarantees, non-custodial execution mechanics, and an on-chain troubleshooting directory for RescueKit users.
+> Architectural security guarantees, non-custodial execution mechanics, and on-chain revert reference for `SponsorableBatchExecutor`.
 
 ---
 
@@ -26,34 +26,15 @@ RescueKit is engineered from the ground up to recover assets safely without ever
 
 ---
 
-## 2. Complete Error Directory & Troubleshooting
+## 2. On-Chain Contract Reverts
 
-### On-Chain Contract Reverts
+The table below catalogs every revert that can be thrown on-chain by `SponsorableBatchExecutor.sol`:
 
-| Error | Cause | What Happened | How to Resolve |
+| Revert / Error | Trigger Condition | What Happened On-Chain | How to Resolve |
 | :--- | :--- | :--- | :--- |
-| `Unauthorized()` (`0x82b42900`) | Signature verification failed. | The recovered address from the batch authorization does not match the compromised wallet. | 1) Ensure you are entering the private key that matches the compromised address; 2) If using client libraries or the REST API, ensure you sign `batchDigest` using EIP-191 personal sign (`account.signMessage({ message: { raw: digest } })`). |
-| `"Flash loan request failed"` | A failure occurred during the flash loan operation. | The contract wraps the entire lending rescue (borrowing debt, repaying debt to the lending pool, withdrawing collateral, swapping collateral on a DEX, and approving repayment) inside a single callback. If **any** step fails—whether the pool lacks liquidity, debt repayment is rejected, collateral is locked, Uniswap slippage is exceeded, or residual balance is short—the contract catches the revert and emits this single error. | Because the contract aggregates all callback failures under this error, the exact root cause cannot be known from the error string alone. Check the transaction or simulation trace manually (e.g. via Tenderly, Phalcon, or block explorer simulation) to see which internal step reverted. |
-| `"Flash loan settlement failed"` | Insufficient balance to repay the flash loan. | After repaying debt, withdrawing collateral, and swapping, the account balance was less than `loanAmount + premium`. | Check swap slippage or verify if enough collateral was sold to cover the borrowed debt plus fee. |
-| `"Token claim failed"` | Single-claim transaction reverted. | The airdrop or staking contract rejected the claim call (e.g. proof expired, already claimed, or ineligible). | Verify claim eligibility and proof data. If claiming multiple rewards, select multiple claims in the UI so a single failing claim does not revert the entire rescue. |
-| `"NFT mint failed"` | NFT contract reverted during mint. | Mint preconditions were not met (e.g. allowlist proof invalid, public sale paused, or sold out). | Verify allowlist status, proof data, and sale phase on the collection's official mint interface. |
-| `EnforcedPause()` | Protocol is temporarily paused. | Emergency maintenance is active. | Check protocol announcements and retry once maintenance concludes. |
-
-### Application & Input Validation Errors
-
-| Error String | Cause | How to Resolve |
-| :--- | :--- | :--- |
-| `"Destination address cannot be the same as the compromised address."` | Entered the compromised address as the safe recovery destination. | Enter an uncompromised, separate wallet address. |
-| `"Destination is a token contract. Trapped funds will be lost forever."` | Entered an ERC-20 or ERC-721 token contract address as the recovery destination. | Supply a standard personal wallet (EOA) or Safe multisig address. |
-| `"Insufficient sponsor gas. Please deposit at least X ETH..."` | The local sponsor burner wallet lacks enough native gas to broadcast the transaction. | Copy the sponsor address shown in the sidebar and deposit a small amount of native gas (e.g. 0.005 ETH/BNB/POL). |
-| `"Invalid private key: must be 32 hex bytes."` | The private key string is not formatted as 64 hexadecimal characters. | Verify the private key string; remove any extra spaces or invalid characters. |
-| `"Private key does not match compromised address."` | The derived address from the private key does not match the entered compromised wallet address. | Ensure you are pasting the private key belonging to the compromised wallet being rescued. |
-| `"No balance found to rescue for the selected assets."` | Selected tokens or native currency have zero balance on-chain. | Check the selected chain and verify whether the assets were already moved or drained. |
-
-### Network & RPC Failures
-
-| Issue | Cause | How to Resolve |
-| :--- | :--- | :--- |
-| `Transaction confirmation timed out after 60000ms.` | Network congestion delayed block inclusion. | Check the transaction hash on the block explorer; the transaction will often confirm shortly once network congestion eases. |
-| `Nonce too low` | The sponsor wallet broadcasted multiple transactions in rapid succession before the previous confirmed. | Wait 10–15 seconds for pending transactions to confirm, or click **Refresh Balances** in the sponsor card. |
-| `Replacement transaction underpriced` | A replacement transaction did not increase gas fees by at least 10%. | Select the **Rapid** gas preset or increase `maxPriorityFeePerGas` before resubmitting. |
+| `Unauthorized()` (`0x82b42900`) | Signature verification failed. | The recovered address from the batch authorization does not match `address(this)` (the compromised wallet). | 1) Verify that the private key corresponds to the compromised account; 2) When client-signing `batchDigest`, ensure you sign using EIP-191 personal sign (`account.signMessage({ message: { raw: digest } })`). |
+| `"Flash loan request failed"` | A failure occurred during the flash loan operation. | The contract wraps the entire lending rescue (borrowing debt, repaying debt to the lending pool, withdrawing collateral, DEX swapping, and balance verification) inside a single callback. If **any** step fails—whether the pool lacks liquidity, debt repayment is rejected, collateral is locked, Uniswap slippage is exceeded, or residual balance is short—the contract catches the revert and emits this single error. | Because the contract aggregates all callback failures under this error, the exact root cause cannot be known from the revert string alone. Check the transaction or simulation trace manually (e.g. via Tenderly, Phalcon, or block explorer simulation) to see which internal step reverted. |
+| `"Flash loan settlement failed"` | Insufficient debt token balance to repay the flash loan. | After repaying debt, withdrawing collateral, and swapping, the account balance was less than `loanAmount + premium`. | Check swap slippage or verify if enough collateral was sold to cover the borrowed debt plus fee. |
+| `"Token claim failed"` | Single-claim transaction reverted. | The distributor or staking contract rejected the claim call (e.g. proof expired, already claimed, or ineligible). | Verify claim eligibility and proof data on the distributor contract. |
+| `"NFT mint failed"` | NFT collection contract reverted during mint. | Mint preconditions were not met (e.g. allowlist proof invalid, public sale paused, or collection sold out). | Verify allowlist status, proof data, and sale phase on the collection's official mint interface. |
+| `EnforcedPause()` | Protocol is temporarily paused. | Contract owner has paused protocol operations for emergency maintenance. | Check protocol announcements and retry once maintenance concludes. |
