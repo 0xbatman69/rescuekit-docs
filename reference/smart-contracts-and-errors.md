@@ -1,6 +1,6 @@
 # Security Model & Troubleshooting Directory
 
-> Architectural security guarantees, non-custodial execution mechanics, and an exhaustive troubleshooting directory for RescueKit users and integrators.
+> Architectural security guarantees, non-custodial execution mechanics, and an on-chain troubleshooting directory for RescueKit users.
 
 ---
 
@@ -20,39 +20,24 @@ RescueKit is engineered from the ground up to recover assets safely without ever
 - **Double-Fallback Refund Safeguard (91.00% Net)**: If an affiliate payout fails (e.g. unoptimized contract receiver) and the subsequent redirect to the protocol treasury also fails, the unpayable 6.00% cut is automatically refunded to `safeDestination`. The victim receives **91.00%** net recovery rather than leaving residual value behind for attackers.
 - **Atomic Rollback on Transaction Reverts**: If an entire recovery transaction fails and reverts on-chain (due to gas exhaustion, invalid signature, or flash loan failure), standard EVM execution rolls back all state changes atomically and zero fees are charged.
 
----
-
-## 2. Supported Recovery Operations
-
-RescueKit implements the **ERC-7821** batch execution standard (`execute(bytes32 mode, bytes calldata executionData)`). The protocol handles each recovery operation through dedicated execution modes:
-
-| Operation | Standard / Mode | User Workflow | What It Does |
-| :--- | :--- | :--- | :--- |
-| **Token & NFT Rescue** | Mode 2 (`SINGLE_BATCH_WITH_OPDATA`) | `/transfer` | Sweeps multiple ERC-20 tokens, native gas, ERC-721 NFTs, and ERC-1155 editions in one atomic transaction. |
-| **DeFi Lending Rescue** | Mode 4 (`FLASH_LOAN_BATCH`) | `/lending` | Borrows repayment capital via flash loan, repays debt, withdraws collateral, swaps collateral if needed, and sweeps surplus to safety. |
-| **Single Airdrop Claim** | Mode 6 (`CLAIM_BATCH`) | `/claim` | Calls a distributor contract to claim tokens and immediately sweeps the claimed proceeds and residual gas to safety. |
-| **ERC-721 NFT Mint & Save** | Mode 7 (`MINT_BATCH`) | `/mint` | Executes allowlist or public NFT mints and automatically intercepts the minted token ID, transferring it to safety in the same block. |
-| **ERC-1155 Edition Mint** | Mode 8 (`MINT_BATCH_1155`) | `/mint` | Mints multi-edition collectibles and immediately forwards the editions to safe storage. |
-| **Resilient Multi-Claim** | Mode 9 (`MULTI_CLAIM_BATCH`) | `/claim` | Executes multiple claims across different protocols; if any individual claim reverts, it logs `ClaimFailed` and continues sweeping all other claimed tokens. |
-
 ### Replay & Front-Running Protection
 - **Chain & Account Binding**: Every recovery authorization is cryptographically bound to the current `block.chainid` and the compromised wallet's address. It is mathematically impossible to replay an authorization on another blockchain or against another wallet.
 - **Mempool Protection**: The independent sponsor gas wallet pays all transaction fees via private RPC relays (Flashbots on Ethereum, 48 Club on BSC, standard sequencer pools on L2s), keeping the transaction hidden from public mempool sweeper bots until it is safely included in a block.
 
 ---
 
-## 3. Complete Error Directory & Troubleshooting
+## 2. Complete Error Directory & Troubleshooting
 
 ### On-Chain Contract Reverts
 
 | Error | Cause | What Happened | How to Resolve |
 | :--- | :--- | :--- | :--- |
-| `Unauthorized()` (`0x82b42900`) | Signature verification failed. | The recovered address from the batch authorization does not match the compromised wallet. | 1) Ensure you are entering the private key that matches the compromised address; 2) If using the REST API or client libraries, ensure you sign `batchDigest` using EIP-191 personal sign (`account.signMessage({ message: { raw: digest } })`). |
-| `"Flash loan request failed"` | Flash loan pool rejected the loan. | The lending pool had insufficient liquidity for the borrowed debt token, or the market was paused. | Check pool liquidity on the target chain; borrow a different asset or select an alternative lending market. |
-| `"Flash loan settlement failed"` | Insufficient balance to repay flash loan. | After repaying debt, withdrawing collateral, and swapping, the account balance was less than `loanAmount + premium`. | Increase slippage tolerance (`minOutRaw`) or increase `sellAmountRaw` to ensure sufficient debt tokens are acquired to settle the flash loan. |
-| `"Token claim failed"` | Single-claim transaction reverted. | The airdrop or staking contract rejected the claim call (e.g. proof expired, already claimed, or ineligible). | Verify claim eligibility and Merkle proof on the project's site. If attempting multiple claims, switch to **Multi-Claim (Mode 9)** so one failing claim does not revert the entire batch. |
+| `Unauthorized()` (`0x82b42900`) | Signature verification failed. | The recovered address from the batch authorization does not match the compromised wallet. | 1) Ensure you are entering the private key that matches the compromised address; 2) If using client libraries or the REST API, ensure you sign `batchDigest` using EIP-191 personal sign (`account.signMessage({ message: { raw: digest } })`). |
+| `"Flash loan request failed"` | A failure occurred during the flash loan operation. | The contract wraps the entire lending rescue (borrowing debt, repaying debt to the lending pool, withdrawing collateral, swapping collateral on a DEX, and approving repayment) inside a single callback. If **any** step fails—whether the pool lacks liquidity, debt repayment is rejected, collateral is locked, Uniswap slippage is exceeded, or residual balance is short—the contract catches the revert and emits this single error. | Because the contract aggregates all callback failures under this error, the exact root cause cannot be known from the error string alone. Check the transaction or simulation trace manually (e.g. via Tenderly, Phalcon, or block explorer simulation) to see which internal step reverted. |
+| `"Flash loan settlement failed"` | Insufficient balance to repay the flash loan. | After repaying debt, withdrawing collateral, and swapping, the account balance was less than `loanAmount + premium`. | Check swap slippage or verify if enough collateral was sold to cover the borrowed debt plus fee. |
+| `"Token claim failed"` | Single-claim transaction reverted. | The airdrop or staking contract rejected the claim call (e.g. proof expired, already claimed, or ineligible). | Verify claim eligibility and proof data. If claiming multiple rewards, select multiple claims in the UI so a single failing claim does not revert the entire rescue. |
 | `"NFT mint failed"` | NFT contract reverted during mint. | Mint preconditions were not met (e.g. allowlist proof invalid, public sale paused, or sold out). | Verify allowlist status, proof data, and sale phase on the collection's official mint interface. |
-| `EnforcedPause()` | Protocol is temporarily paused. | Emergency maintenance is active. | Check protocol status announcements and retry once maintenance concludes. |
+| `EnforcedPause()` | Protocol is temporarily paused. | Emergency maintenance is active. | Check protocol announcements and retry once maintenance concludes. |
 
 ### Application & Input Validation Errors
 
@@ -64,9 +49,6 @@ RescueKit implements the **ERC-7821** batch execution standard (`execute(bytes32
 | `"Invalid private key: must be 32 hex bytes."` | The private key string is not formatted as 64 hexadecimal characters. | Verify the private key string; remove any extra spaces or invalid characters. |
 | `"Private key does not match compromised address."` | The derived address from the private key does not match the entered compromised wallet address. | Ensure you are pasting the private key belonging to the compromised wallet being rescued. |
 | `"No balance found to rescue for the selected assets."` | Selected tokens or native currency have zero balance on-chain. | Check the selected chain and verify whether the assets were already moved or drained. |
-| `"Missing required execute fields: compromisedNonce, sponsorNonce, maxFeePerGas, maxPriorityFeePerGas, tokens"` | Required nonces or gas limits were omitted when calling `POST /api/execute`. | Provide all required nonces, gas fee parameters (in wei), and the `tokens` array in the request body. |
-| `"Invalid tokens list: tokens array is required and must not be empty"` | The `tokens` array was empty in a transfer request. | Include at least one ERC-20 contract address or `"native"` in the `tokens` array. |
-| `"Too many requests. Please try again in X seconds."` | IP exceeded sliding window rate limit on `/build`, `/broadcast`, or `/execute`. | Wait for the indicated retry window before submitting a new request. |
 
 ### Network & RPC Failures
 

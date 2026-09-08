@@ -42,8 +42,8 @@ RescueKit enables victims of private key compromises to atomically rescue trappe
 ### 4. Technical Reference & Error Troubleshooting
 - [Security Model & Troubleshooting Directory](./reference/smart-contracts-and-errors.md)
   - Non-custodial architecture, EIP-7702 delegation, and fee-first settlement
-  - Replay protection and supported recovery operations (Modes 1–9)
-  - Complete error directory: input errors, contract reverts, RPC timeouts, and resolutions
+  - Replay protection, private mempool execution, and anti-exploit guarantees
+  - Complete on-chain and UI error directory: contract reverts, input validation, and RPC resolutions
 
 ---
 

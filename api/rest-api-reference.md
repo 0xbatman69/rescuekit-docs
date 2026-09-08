@@ -323,3 +323,13 @@ async function runZeroKeyRescue() {
 | `405 Method Not Allowed` | Invalid HTTP method | Calling endpoints with `GET`, `PUT`, or `DELETE` (only `POST` is accepted). |
 | `429 Too Many Requests` | Rate limit exceeded | Exceeded 10 req/min (`/build`) or 5 req/min (`/broadcast`, `/execute`). |
 | `500 Internal Server Error` | Execution or node error | Upstream RPC rejection, chain simulation failure, or unhandled contract revert. |
+
+### Common API Error Payloads
+
+| Error Message (`error`) | HTTP Status | Root Cause | Resolution |
+| :--- | :--- | :--- | :--- |
+| `"Missing required execute fields: compromisedNonce, sponsorNonce, maxFeePerGas, maxPriorityFeePerGas, tokens"` | `400 Bad Request` | Required nonces or gas limits were omitted when calling `POST /api/execute`. | Provide all nonces and gas fee parameters (in wei) in the request body. |
+| `"Invalid tokens list: tokens array is required and must not be empty"` | `400 Bad Request` | The `tokens` array was empty in a transfer request. | Include at least one ERC-20 contract address or `"native"` in the `tokens` array. |
+| `"Destination address cannot be the same as the compromised address."` | `400 Bad Request` | Submitted the compromised address as the safe recovery destination. | Provide an uncompromised, separate recovery wallet address. |
+| `"Destination is a token contract. Trapped funds will be lost forever."` | `400 Bad Request` | Target destination is an ERC-20/721 contract. | Use a standard EOA or Safe multisig address. |
+| `"Too many requests. Please try again in X seconds."` | `429 Too Many Requests` | IP exceeded sliding window rate limit on `/build`, `/broadcast`, or `/execute`. | Wait for the indicated retry window (`Retry-After` header) before submitting a new request. |
