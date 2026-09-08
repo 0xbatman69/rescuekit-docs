@@ -115,7 +115,7 @@ Content-Type: application/json
   "sponsorAddress": "0x1234567890123456789012345678901234567890",
   "referrer": null,
   "authTuple": {
-    "contractAddress": "0x43155E33e053054a06F24FDa60F27F2741678301",
+    "contractAddress": "0xf55f11900748b2d49853e8110eDFd796CD5E4C0d",
     "chainId": 8453,
     "nonce": 0
   },
