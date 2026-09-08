@@ -11,7 +11,7 @@ RescueKit enables victims of private key compromises to atomically rescue trappe
 ### 1. Architecture & Core Mechanics
 - [Core Architecture & Protocol Security](#core-architecture)
 - [EIP-7702 Ephemeral Delegation & Sweeper Protection](#how-eip-7702-bypasses-sweeper-bots)
-- [Protocol Fee & Affiliate Commission Structure](#protocol-fee--affiliate-commission-structure)
+- [Protocol Fee & Settlement Mechanics](#protocol-fee--settlement-mechanics)
 - [Supported Networks & Capabilities](#supported-networks)
 
 ### 2. User & Application Guides
@@ -65,14 +65,16 @@ RescueKit eliminates this attack vector entirely using **EIP-7702**:
 - **Zero native gas is ever deposited into the compromised address.** Sweeper bots remain completely inert.
 - **100% Non-Custodial (No Escrow or Protocol Vault)**: The contract never takes custody of user assets. Assets transfer directly from the victim's account to `safeDestination` within the same atomic block. User funds can never be locked or stuck in a contract because no protocol vault or intermediate pool exists.
 
-### Protocol Fee & Affiliate Commission Structure
+### Protocol Fee & Settlement Mechanics
 
-- **Protocol Fee**: Fixed at **15%** of rescued asset value (`feeBps = 1500`, 1,500 / 10,000 basis points).
-- **Affiliate Commission**: **40%** of the protocol fee (equivalent to **6.00%** gross of total rescued value) is automatically diverted and paid directly to the designated referrer address on-chain.
+- **Protocol Fee**: Fixed at **15.00%** of rescued asset value (`feeBps = 1500`, 1,500 / 10,000 basis points).
+- **Affiliate Commission**: **40.00%** of the protocol fee (equivalent to **6.00%** gross of total rescued value) is automatically diverted and paid directly to the designated referrer address on-chain.
 - **Protocol Treasury**: **9.00%** when referred; **15.00%** when unreferred, self-referred, or during repeat rescues.
 - **Victim Net Recovery**: **85.00%** of gross asset value is transferred directly to `safeDestination`.
 - **Double-Fallback Refund Safeguard (91.00% Net)**: If an affiliate payout fails and the subsequent redirect to the protocol treasury also fails, the unpayable 6.00% cut is automatically refunded into the user's sweep, delivering **91.00%** net recovery to `safeDestination` rather than leaving funds behind in the compromised wallet.
-- **Fair Fee Guarantee**: If a transaction reverts or no assets are recovered, zero fee is charged.
+- **Fee-First Settlement Architecture (Anti-Exploit Protection)**: Protocol fees are processed on-chain *before* the remaining balance is dispatched to the safe destination. This design prevents malicious tokens, griefers, or bad actors from blacklisting the treasury address or engineering revert traps to siphon assets fee-free.
+- **Clean Safe Wallet Requirement**: Because fees are settled prior to the final destination sweep, users must always supply a clean, unencumbered recovery wallet (a standard EOA or verified Safe multisig). If `safeDestination` rejects the transfer (e.g. an address blacklisted by centralized tokens like USDC/USDT, or a smart contract lacking a `receive()` function), the batch emits `CallFailed` without reverting—the protocol fee remains collected, and the remaining 85% (or 91%) stays behind in the compromised wallet.
+- **Atomic Transaction Reverts**: If an entire recovery transaction fails and reverts on-chain (e.g. due to invalid signatures, flash loan conditions, or gas exhaustion), all state changes roll back atomically via standard EVM execution and zero fees are charged.
 
 ---
 
