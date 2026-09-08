@@ -10,8 +10,9 @@ RescueKit enables victims of private key compromises to atomically rescue trappe
 
 ### 1. Architecture & Core Mechanics
 - [Core Architecture & Protocol Security](#core-architecture)
-- [Supported Networks & Capabilities](#supported-networks)
 - [EIP-7702 Ephemeral Delegation & Sweeper Protection](#how-eip-7702-bypasses-sweeper-bots)
+- [Protocol Fee & Affiliate Commission Structure](#protocol-fee--affiliate-commission-structure)
+- [Supported Networks & Capabilities](#supported-networks)
 
 ### 2. User & Application Guides
 - [Token & NFT Rescue Guide (`/transfer`)](./guides/token-and-nft-rescue.md)
@@ -36,7 +37,7 @@ RescueKit enables victims of private key compromises to atomically rescue trappe
   - `POST /api/broadcast`: Private relay transaction broadcast (MEV Blocker / Flashbots)
   - `POST /api/execute`: Headless 1-shot execution with private keys
   - Rate limiting, anonymized SHA-256 client tokens, and RFC headers
-  - Zero-key two-pass client signing tutorial (TypeScript & Python)
+  - Zero-key two-pass client signing tutorial (TypeScript / Viem)
 
 ### 4. Technical Reference & Error Troubleshooting
 - [Smart Contract Specification & Error Directory](./reference/smart-contracts-and-errors.md)
@@ -70,6 +71,7 @@ RescueKit eliminates this attack vector entirely using **EIP-7702**:
 - **Affiliate Commission**: **40%** of the protocol fee (equivalent to **6.00%** gross of total rescued value) is automatically diverted and paid directly to the designated referrer address on-chain.
 - **Protocol Treasury**: **9.00%** when referred; **15.00%** when unreferred, self-referred, or during repeat rescues.
 - **Victim Net Recovery**: **85.00%** of gross asset value is transferred directly to `safeDestination`.
+- **Double-Fallback Refund Safeguard (91.00% Net)**: If an affiliate payout fails and the subsequent redirect to the protocol treasury also fails, the unpayable 6.00% cut is automatically refunded into the user's sweep, delivering **91.00%** net recovery to `safeDestination` rather than leaving funds behind in the compromised wallet.
 - **Fair Fee Guarantee**: If a transaction reverts or no assets are recovered, zero fee is charged.
 
 ---
