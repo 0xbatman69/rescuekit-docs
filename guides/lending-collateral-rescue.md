@@ -78,19 +78,13 @@ flowchart TD
 5. **ERC-3156 Standard**:
    - `onFlashLoan(address initiator, address token, uint256 amount, uint256 fee, bytes data)`
 
-### Cryptographic Security & Anti-Spoofing Protections
-- **Transient Storage Binding**: Before dispatching the flash loan, the executor records:
-  ```solidity
-  assembly ("memory-safe") {
-      tstore(_FLASH_ACTIVE_SLOT, 1)
-      tstore(_FLASH_TARGET_SLOT, flashTarget)
-  }
-  ```
-- **Context Verification**: When the flash loan provider calls into the contract callback, `_verifyFlashContext()` asserts that:
-  1. An active flash loan is underway (`tload(_FLASH_ACTIVE_SLOT) == 1`).
-  2. The `msg.sender` calling the callback matches the exact `flashTarget` that was called (`tload(_FLASH_TARGET_SLOT) == msg.sender`).
-  3. The `initiator` matches `address(this)`.
-- If any check fails, the contract reverts immediately with `Unauthorized()`. This makes it mathematically impossible for external attackers or bots to trigger malicious callbacks.
+### Anti-Spoofing & Callback Security
+- **Strict Provider Locking**: Before requesting the flash loan, the executor binds the transaction context to the target lending pool.
+- **Context Assertions**: When the provider triggers the contract's callback, the contract verifies:
+  1. An authentic flash loan initiated by the victim's wallet is currently active.
+  2. The caller executing the callback is strictly the authorized lending pool contract.
+  3. The loan initiator matches the compromised account.
+- If any condition fails, the execution immediately aborts with `Unauthorized()`, preventing external attackers or front-running bots from hijacking or spoofing callback functions.
 
 ### Liquidation & Slippage Safety
 - When collateral must be sold to repay the flash loan, the batch includes an embedded Uniswap v3 swap.

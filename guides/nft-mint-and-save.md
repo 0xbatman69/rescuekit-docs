@@ -51,41 +51,21 @@ flowchart TD
     N --> O[Assets Safely Land in Recovery Wallet]
 ```
 
-### Mode 7: ERC-721 Mint Batch (`0x07`)
-- **Mode Constant**: `0x0100000000007821000700000000000000000000000000000000000000000000`
-- **EIP-712 / EIP-191 Digest**:
-  ```solidity
-  keccak256(abi.encode(
-      mode,
-      keccak256(abi.encode(calls)),
-      safeDestination,
-      nftCollection,
-      referrer,
-      block.chainid,
-      address(this)
-  ))
-  ```
-- **Dual-Path Atomic Sweep**:
-  1. **Transient Storage Interception**: Prior to calling the mint contract, `SponsorableBatchExecutor` initializes transient storage slots:
-     - `_MINT_ACTIVE_SLOT`: Expected mint quantity.
-     - `_MINT_COLLECTION_SLOT`: NFT contract address.
-     - `_MINT_DEST_SLOT`: `safeDestination` address.
-  2. **Callback Handling**: If the NFT contract implements `safeMint`, it calls `onERC721Received(operator, from, tokenId, data)`. The executor validates `msg.sender == collection` and `from == address(0)`, and immediately transfers the token to `safeDestination` before the mint function even returns.
-  3. **Fallback Static Prediction**: If standard `_mint` is used (bypassing callbacks), the contract queries `nextTokenId()` or `totalSupply()` before minting, captures return data, and invokes `transferFrom(address(this), safeDestination, tokenId)` immediately after the mint call.
-  4. **Multi-Quantity Support**: Automatically parses standard mint selectors (`0xa0712d68` for `mint(uint256)` or `0x40c10f19` for `mint(address,uint256)`) and sweeps a range of up to 100 consecutive token IDs.
+### Mode 7: ERC-721 Mint & Save Batch
+- **Dual-Path Atomic Sweep Protection**:
+  1. **Instant Callback Forwarding**: If the NFT collection contract uses `safeMint`, it issues a callback (`onERC721Received`) to the recipient. RescueKit immediately catches this callback and transfers the NFT to `safeDestination` before the mint transaction even finishes.
+  2. **Fallback Next-ID Prediction**: If the contract uses a standard `_mint` without callbacks, RescueKit queries the contract's current supply or next token ID before minting, and immediately invokes `transferFrom` to deliver the newly minted token ID directly to your recovery address.
+  3. **Multi-Quantity Mints**: Supports minting and sweeping multiple consecutive token IDs (up to 100 NFTs) in a single atomic transaction.
 
-### Mode 8: ERC-1155 Multi-Edition Mint Batch (`0x08`)
-- **Mode Constant**: `0x0100000000007821000800000000000000000000000000000000000000000000`
-- **Digest Structure**: Same structural parameters as Mode 7, bound to Mode 8 identifier.
+### Mode 8: ERC-1155 Multi-Edition Mint Batch
 - **Edition Sweep Execution**:
-  1. Activates transient storage context.
-  2. If `safeMint` is invoked, `onERC1155Received` or `onERC1155BatchReceived` instantly forwards the edition(s) to `safeDestination`.
-  3. If callbacks are absent, parses calldata for standard 1155 mint selectors (`0x156e29f6`, `0x731133e9`, or batch `0xd81d0a15`), inspects the resulting balance, and executes `safeTransferFrom` to `safeDestination`.
+  1. If `safeMint` is invoked, the `onERC1155Received` or `onERC1155BatchReceived` hook instantly routes the minted edition(s) directly to `safeDestination`.
+  2. For non-callback mints, the batch automatically inspects the newly minted token balance and executes `safeTransferFrom` to deliver the editions to your safe wallet.
 
-### Mode 6: Mint-Only / Custom Mint Batch (`0x06`)
-- Used for complex custom minters, Dutch auctions, or multi-step claims that do not conform to standard ERC-721/1155 interfaces.
-- Executes the arbitrary mint call directly as a privileged batch call.
-- Follow-up sweeps can be executed in the exact same transaction or via an immediate follow-up transaction.
+### Mode 6: Custom Mint Only
+- **Best For**: Non-standard mint mechanisms (such as Dutch auctions, multi-contract claim sequences, or customized minting vaults).
+- Executes the custom mint call directly as a privileged atomic batch call.
+- Follow-up sweeps can be bundled into the same transaction or executed as an immediate transfer batch.
 
 ### Residual Native Gas Sweep
 When minting requires sending native ETH/gas to the NFT contract:

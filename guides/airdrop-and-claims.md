@@ -50,45 +50,20 @@ flowchart TD
     N --> O[All Claimed Assets Transferred to Safe Destination]
 ```
 
-### Mode 6: Single-Claim Batch (`0x06`)
-- **Mode Identifier**: `0x0100000000007821000600000000000000000000000000000000000000000000`
-- **Digest Hashing**:
-  ```solidity
-  keccak256(abi.encode(mode, keccak256(abi.encode(calls)), referrer, block.chainid, address(this)))
-  ```
+### Mode 6: Single-Claim Batch
+- **Best For**: Rescuing a single high-priority claim (such as a large token airdrop or an unlocked vesting tranche).
 - **Execution Flow**:
-  1. `calls[0]` is the primary claim interaction (e.g. calling `merkleDistributor.claim(...)`).
-  2. The contract executes `calls[0]`. If it fails, the entire transaction reverts with `"Token claim failed"`.
-  3. Upon success, the executor executes `_tail(calls)`—the remaining calls in the array.
-  4. These tail calls sweep the newly claimed ERC-20 tokens and any residual native gas directly to `safeDestination`.
+  1. The compromised account executes the claim call on the distributor contract.
+  2. If the claim succeeds, RescueKit immediately sweeps the claimed tokens and any residual native gas to `safeDestination` in the same atomic transaction.
+  3. If the claim reverts (e.g. proof invalid or expired), the entire transaction aborts cleanly, ensuring no fees are paid.
 
-### Mode 9: Multi-Claim Batch (`0x09`)
-- **Mode Identifier**: `0x0100000000007821000900000000000000000000000000000000000000000000`
-- **Lenient Execution Guarantee**: In many scenarios, a compromised wallet has multiple pending claims across different protocols or pools. If one claim reverts (e.g. because it was already claimed or the Merkle root expired), standard atomic batches would revert the entire bundle. Mode 9 solves this:
-  - **Calldata Structure**: `abi.decode(executionData, (Call[] claimCalls, Call[] sweepCalls, bytes opData))`
-  - **Digest Binding**:
-    ```solidity
-    keccak256(abi.encode(
-        mode,
-        keccak256(abi.encode(claimCalls)),
-        keccak256(abi.encode(sweepCalls)),
-        referrer,
-        block.chainid,
-        address(this)
-    ))
-    ```
-  - **Execution Logic**:
-    ```solidity
-    for (uint256 i = 0; i < claimCalls.length; i++) {
-        (bool ok, ) = claimCalls[i].target.call{value: claimCalls[i].value}(claimCalls[i].data);
-        if (!ok) {
-            bytes memory reason = _safeReturnData(256);
-            emit ClaimFailed(claimCalls[i].target, i, reason);
-        }
-    }
-    _executeCalls(sweepCalls, true, referrer);
-    ```
-  - Even if several claims fail, the executor catches the error, emits `ClaimFailed`, and proceeds to execute **all** sweep calls. Any successfully claimed tokens are rescued without being trapped by a single failing claim.
+### Mode 9: Resilient Multi-Claim Batch
+- **Best For**: Wallets eligible for multiple claims across different projects or liquidity pools.
+- **Resilient Execution Guarantee**:
+  - In standard atomic transactions, if one claim fails (for instance, an old airdrop that has expired), the whole transaction reverts and all claims fail.
+  - Mode 9 solves this: it attempts each claim independently in sequence.
+  - If any individual claim reverts, the contract emits a `ClaimFailed` log, catches the error, and immediately proceeds to the next claim.
+  - Finally, it sweeps **all** successfully claimed tokens to `safeDestination`. A single expired or ineligible claim never blocks your other valid rewards from being rescued.
 
 ### Fee & Affiliate Processing
 - As each token is swept from the compromised address, `_processERC20Sweep` checks the on-chain balance.

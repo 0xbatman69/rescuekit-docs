@@ -40,9 +40,9 @@ RescueKit enables victims of private key compromises to atomically rescue trappe
   - Zero-key two-pass client signing tutorial (TypeScript / Viem)
 
 ### 4. Technical Reference & Error Troubleshooting
-- [Smart Contract Specification & Error Directory](./reference/smart-contracts-and-errors.md)
-  - `SponsorableBatchExecutor.sol` interface, storage, and execution modes (Modes 1–9)
-  - Cryptographic digest hashing, EIP-191 personal signatures, and replay protection
+- [Security Model & Troubleshooting Directory](./reference/smart-contracts-and-errors.md)
+  - Non-custodial architecture, EIP-7702 delegation, and fee-first settlement
+  - Replay protection and supported recovery operations (Modes 1–9)
   - Complete error directory: input errors, contract reverts, RPC timeouts, and resolutions
 
 ---
