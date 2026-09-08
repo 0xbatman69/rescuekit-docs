@@ -34,7 +34,7 @@ RescueKit enables victims of private key compromises to atomically rescue trappe
 ### 3. Developer & Agent REST API
 - [Headless REST API Reference](./api/rest-api-reference.md)
   - `POST /api/build`: 100% offline batch assembly, gas calculation, and digest building
-  - `POST /api/broadcast`: Private relay transaction broadcast (MEV Blocker / Flashbots)
+  - `POST /api/broadcast`: Private relay transaction broadcast (Flashbots / 48 Club / Custom RPC)
   - `POST /api/execute`: Headless 1-shot execution with private keys
   - Rate limiting, anonymized SHA-256 client tokens, and RFC headers
   - Zero-key two-pass client signing tutorial (TypeScript / Viem)
@@ -84,9 +84,9 @@ RescueKit is deployed and operational across 6 EVM networks:
 
 | Chain Name | Chain ID | Native Gas Token | EIP-7702 Status | Private Relay Protection | Block Explorer |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Ethereum** | `1` | ETH | Active | `https://rpc.mevblocker.io/fast` | [Etherscan](https://etherscan.io) |
-| **Base** | `8453` | ETH | Active | Flashbots / Standard Failover Pool | [Basescan](https://basescan.org) |
-| **Optimism** | `10` | ETH | Active | Flashbots / Standard Failover Pool | [Optimistic Etherscan](https://optimistic.etherscan.io) |
-| **BNB Smart Chain** | `56` | BNB | Active | `https://rpc.mevblocker.io/fast` / Bloxroute | [BscScan](https://bscscan.com) |
+| **Ethereum** | `1` | ETH | Active | Flashbots Protect (`https://rpc.flashbots.net`) | [Etherscan](https://etherscan.io) |
+| **Base** | `8453` | ETH | Active | Standard Sequencer Pool | [Basescan](https://basescan.org) |
+| **Optimism** | `10` | ETH | Active | Standard Sequencer Pool | [Optimistic Etherscan](https://optimistic.etherscan.io) |
+| **BNB Smart Chain** | `56` | BNB | Active | 48 Club Private Relay (`https://rpc.48.club`) | [BscScan](https://bscscan.com) |
 | **Polygon** | `137` | POL / MATIC | Active | Standard Failover Pool | [Polygonscan](https://polygonscan.com) |
 | **Monad** | `143` | MON | Active | Standard Failover Pool | [MonadScan](https://monadscan.com) |
