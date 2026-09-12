@@ -232,13 +232,12 @@ Bytes 8-9: Protocol Sub-Mode (0x0001 = OpData, 0x0003 = NFT, 0x0004 = FlashLoan,
 Bytes 10-31: Unused / Zero Padding
 ```
 
-### 3.4 In-Lock Transient Storage & Reentrancy Guards
+### 3.4 In-Lock Transient State & Reentrancy Guards
 
-The protocol leverages EIP-1153 transient storage (`TLOAD` / `TSTORE`) where available, and deterministic storage slots when compiling for legacy target chains, to manage state during complex flash loan callbacks:
+The protocol leverages EIP-1153 transient storage (`TLOAD` / `TSTORE`) on modern EVM chains, and isolated execution flags on legacy target chains, to maintain secure state across complex multi-step operations:
 
-- **Slot `0x4d696e742d666f72776172642d6163746976652d763100...`:** Active NFT mint context flag.
-- **Slot `0x466c6173682d4c6f616e2d436f6e746578742d763100...`:** Active flash loan validation context flag.
-- **Transient Reset:** Storage slots are asserted upon entry and unconditionally cleared prior to transaction completion, preventing cross-call reentrancy and storage contamination.
+- **Callback Verification:** Isolates active execution contexts during flash loan settlements and NFT mint redirects so unexpected external callbacks cannot trigger unintended state changes.
+- **Zero Cross-Call Contamination:** All transient state flags are asserted upon entry and unconditionally wiped before transaction finalization, providing robust reentrancy protection across nested calls.
 
 ---
 
@@ -434,31 +433,13 @@ Total Recovered Asset (100% / 10,000 BPS)
                  └───> 9.00% (900 BPS) ──> Protocol Treasury (0x2735...)
 ```
 
-### 7.3 Mathematical Implementation & Safe Division
+### 7.3 Mathematical Implementation & Safe Accounting
 
-To prevent integer overflow and rounding errors on high-precision or low-decimal tokens, `SponsorableBatchExecutor` executes a two-tier arithmetic routine:
+To maintain rigorous accounting across tokens of varying decimals (from standard 18-decimal assets down to 6-decimal stablecoins):
 
-```solidity
-uint256 internal constant BPS_DENOMINATOR = 10000;
-
-function _splitFee(uint256 amount) internal view returns (uint256 feeAmount, uint256 sendAmount) {
-    uint256 currentFeeBps = _getFeeBps(); // 1500n
-    if (currentFeeBps == 0) {
-        return (0, amount);
-    }
-    // Safe multiplication check
-    if (amount <= type(uint256).max / currentFeeBps) {
-        feeAmount = (amount * currentFeeBps) / BPS_DENOMINATOR;
-    } else {
-        // High-magnitude overflow prevention
-        feeAmount = (amount / BPS_DENOMINATOR) * currentFeeBps 
-                  + ((amount % BPS_DENOMINATOR) * currentFeeBps) / BPS_DENOMINATOR;
-    }
-    sendAmount = amount - feeAmount;
-}
-```
-
-- **Rounding Direction:** Integer division in Solidity truncates toward zero. This favors the user, guaranteeing that the deducted fee never exceeds `15.0000...%`.
+- **Integer-Safe Arithmetic:** The contract computes fee distributions using standard basis point arithmetic (`1500` BPS out of `10,000`), guarding against numeric overflow on high-balance recoveries.
+- **User-Favorable Rounding:** Standard EVM integer division truncates fractions toward zero. This guarantees that fee deductions will never exceed the nominal 15.00% rate.
+- **Atomic Distribution:** Asset splitting and destination transfers occur sequentially in the same call frame, preventing any mismatch between deducted fees and transferred surplus.
 
 ### 7.4 Zero-Fee Exemptions & Asset Exclusions
 
@@ -476,48 +457,33 @@ RescueKit does not rely on external off-chain price oracles (Chainlink, Pyth) to
 
 ## 8. Transaction Construction, Gas Dynamics & Type-4 Lifecycle
 
-### 8.1 The Two-Component Gas Equation
+### 8.1 Gas Budgeting Architecture
 
-Executing an asset rescue requires deriving two independent values:
+Executing an EIP-7702 asset rescue requires coordinating two fundamental parameters:
 
-$$\text{Total Transaction Cost} = \text{Gas Units} \times \text{Gwei Price}$$
+1. **Gas Units (Limit):** The computational capacity budgeted to complete all batch steps.
+2. **Gwei Price (Per-Unit Cost):** The live market fee (base fee + priority tip) paid to network validators/sequencers.
 
-| Component | Nature | Source | Dependency on RPC |
-|---|---|---|---|
-| **Gas Units** | Quantity (e.g., 350,000) | Analytical formula (`rescueGasFallback`) | **No (Deterministic Math)** |
-| **Gwei Price** | Price per unit (e.g., 25 gwei) | Live network state (`estimateFeesPerGas`) | **Yes (Live Network Query)** |
+### 8.2 Analytical Gas Budgeting & RPC Resilience
 
-### 8.2 Analytical Gas-Unit Fallback Formulas (`rescueGasFallback`)
+Public RPC endpoints frequently fail to accurately simulate gas limits for EIP-7702 transactions when evaluating accounts that are not yet delegated on-chain. To eliminate transaction reverts caused by faulty RPC simulations, RescueKit implements an analytical gas estimation engine:
 
-Public RPC nodes frequently return invalid or failing `eth_estimateGas` simulations when evaluating EIP-7702 transactions on accounts that are not yet delegated on-chain. RescueKit solves this by employing worst-case analytical math:
+- **Operation-Specific Scaling:** Dynamically scales gas limits based on the operational complexity of the rescue—accounting for the exact number of transfer calls, claim proofs, or lending position repayments.
+- **Complex Flow Allocations:** Heavy execution paths (such as multi-hop flash loan repayments and debt liquidations) receive conservative gas unit buffers to ensure safe execution under unexpected state conditions.
+- **Deterministic Reliability:** Because this budget is computed analytically, transactions can be reliably signed and broadcast even when public RPC node estimators produce unreliable results.
 
-#### Standard Networks (Base, Optimism, BSC, Arbitrum, Ethereum, Linea, Sonic, etc.)
-$$\text{Gas}_{\text{Transfer}} = \max(100{,}000 + 65{,}000 \times N_{\text{calls}},\, 350{,}000)$$
-$$\text{Gas}_{\text{Mint}} = \max(300{,}000 + 65{,}000 \times N_{\text{calls}},\, 450{,}000)$$
-$$\text{Gas}_{\text{Claim}} = \max(250{,}000 + 65{,}000 \times N_{\text{calls}},\, 400{,}000)$$
-$$\text{Gas}_{\text{Lending}} = \max(150{,}000 + 450{,}000 \times N_{\text{debt}} + 120{,}000 \times N_{\text{idle}},\, 500{,}000)$$
+### 8.3 Dynamic Fee Pricing & Priority Inclusion
 
-#### Polygon Override (Heavier Bytecode Access)
-$$\text{Gas}_{\text{Transfer}} = \max(120{,}000 + 80{,}000 \times N_{\text{calls}},\, 400{,}000)$$
-$$\text{Gas}_{\text{Lending}} = \max(200{,}000 + 500{,}000 \times N_{\text{debt}} + 150{,}000 \times N_{\text{idle}},\, 700{,}000)$$
+To prevent MEV frontrunning and ensure immediate block inclusion:
 
-#### Monad Override (Parallel Execution Overhead)
-$$\text{Gas}_{\text{Lending}} = \begin{cases} 1{,}500{,}000 & \text{if } N_{\text{debt}} > 0 \\ \max(150{,}000 + 120{,}000 \times N_{\text{idle}},\, 500{,}000) & \text{if } N_{\text{debt}} = 0 \end{cases}$$
-
-### 8.3 Live Fee Pricing Multipliers & Network Spikes
-
-To guarantee inclusion ahead of competing mempool transactions, RescueKit applies aggressive fee multipliers over base fee and tip:
-
-- **Base Fee Multiplier:** `3x` (buffers against rapid block base fee spikes).
-- **Tip Multiplier:**
-  - Standard Sequencer L2s: `1x - 2x`
-  - High-Competition / Mempool Chains (BNB Chain, Monad): `5x`
-- **Fee Guard:** If RPC returns `0` for all fee parameters, the transaction halts immediately to prevent broadcasting zero-tip transactions.
+- **Adaptive Base Buffering:** Incorporates dynamic base fee headrooms to absorb rapid block-to-block fee spikes without dropping from the block builder queue.
+- **Competitive Priority Bidding:** Scales priority tips according to the network's specific mempool model—applying focused inclusion bids on sequencer L2s and competitive priority pricing on competitive public mempools.
+- **Fail-Safe Price Guards:** If an RPC endpoint returns zero or invalid gas fee data, the client halts broadcast automatically to protect the user from broadcasting dead transactions.
 
 ### 8.4 Receipt Polling, Confirmation Timeouts & Nonce Coordination
 
-- **Receipt Wait Timeout:** 30 seconds on fast chains (Monad), 60 seconds on standard L2s, 90 seconds on Polygon.
-- **Sponsor Nonce Management:** Queries `getTransactionCount(address, "pending")` to ensure subsequent rescues do not collide with unmined transactions.
+- **Adaptive Receipt Polling:** Optimizes polling intervals based on network block times (from ultra-fast sub-second parallel chains to standard L2 block times).
+- **Sponsor Nonce Tracking:** Synchronizes against pending transaction counts to allow rapid consecutive recoveries without nonce collisions.
 
 ---
 
@@ -607,26 +573,17 @@ RescueKit implements a permissionless referral system embedded directly into `Sp
 
 ### 11.2 Self-Referral Prevention Logic
 
-To prevent operators from gaming the protocol by referring their own recoveries:
+To protect protocol revenue and maintain fair affiliate incentives, RescueKit enforces strict on-chain validation:
 
-```solidity
-if (canPayReferral && target != referrer) {
-    // Pay affiliate commission
-}
-```
+- **Destination Separation:** If the designated `safeDestination` address matches the `referrer` address, referral attribution is automatically disabled, and the full fee routes to the protocol treasury.
+- **Immutable Check:** This verification executes directly inside the smart contract during the transfer phase, making it impossible to circumvent via client-side manipulation.
 
-If the `safeDestination` (`target`) matches the `referrer` address, referral attribution is disabled, and 100% of the 15% fee routes to the protocol treasury.
+### 11.3 Gas-Stipended Transfer Isolation
 
-### 11.3 Gas-Stipended Transfer Isolation (50,000 Gas Guard)
+To ensure that an affiliate's receiving contract cannot intentionally or unintentionally revert the entire recovery batch:
 
-To prevent a malicious or reverting smart-contract affiliate address from bricking the entire recovery transaction, outbound affiliate transfers are constrained:
-
-```solidity
-(bool affOk, ) = referrer.call{value: affiliateCut, gas: 50_000}("");
-```
-
-- **Gas Limit:** 50,000 units.
-- **Reversion Handling:** If the affiliate call reverts or runs out of gas, the executor catches the failure, emits `ReferralFailed(...)`, and reroutes the affiliate cut to the protocol treasury. The user's recovery transaction **succeeds regardless**.
+- **Execution Isolation:** Outbound affiliate commission transfers are isolated with a strict gas stipend.
+- **Reversion Handling:** If an affiliate address cannot receive funds (e.g., an unhandled fallback or out-of-gas error), the failure is caught, an event is emitted, and the affiliate portion routes to the protocol treasury. The primary recovery to the user's safe destination **succeeds completely without interruption**.
 
 ---
 
@@ -697,19 +654,20 @@ The RescueKit backend provides three high-performance REST API endpoints for pro
 - **Canonical Address:** `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`
 - **Compiler Optimizations:** Enabled (200 runs)
 
-### 13.2 Execution Modes & Bitmask Flags
+### 13.2 Execution Modes & Protocol Capabilities
 
-```solidity
-// Canonical Mode Constants
-bytes32 constant MODE_SINGLE_BATCH         = 0x0100000000000000000000000000000000000000000000000000000000000000;
-bytes32 constant MODE_BATCH_WITH_OPDATA    = 0x0100000000007821000100000000000000000000000000000000000000000000;
-bytes32 constant MODE_NFT_SPONSOR_RESCUE   = 0x0100000000007821000300000000000000000000000000000000000000000000;
-bytes32 constant MODE_FLASH_LOAN_BATCH     = 0x0100000000007821000400000000000000000000000000000000000000000000;
-bytes32 constant MODE_CLAIM_BATCH          = 0x0100000000007821000600000000000000000000000000000000000000000000;
-bytes32 constant MODE_MINT_721_BATCH       = 0x0100000000007821000700000000000000000000000000000000000000000000;
-bytes32 constant MODE_MINT_1155_BATCH      = 0x0100000000007821000800000000000000000000000000000000000000000000;
-bytes32 constant MODE_MULTI_CLAIM_BATCH    = 0x0100000000007821000900000000000000000000000000000000000000000000;
-```
+RescueKit implements modular execution modes conforming to the ERC-7821 standard:
+
+| Mode ID | Protocol Capability | Execution Description |
+|---|---|---|
+| **Mode 1** | Standard Single Batch | Executes sequential atomic calls without extra operational metadata. |
+| **Mode 2** | Batch with Operational Data | Executes batch calls alongside contextual parameter decoding. |
+| **Mode 3** | NFT Sponsor Rescue | Sweeps ERC-721 and ERC-1155 tokens directly to safety with 0% protocol fee. |
+| **Mode 4** | Flash Loan Lending Batch | Manages flash loan borrowing, debt payoff, collateral redemption, and repayment. |
+| **Mode 6** | Direct Claim Batch | Claims airdrops or vesting tokens and sweeps net balances in one step. |
+| **Mode 7** | ERC-721 Mint & Forward | Intercepts NFT mint callbacks and redirects tokens to the safe destination. |
+| **Mode 8** | ERC-1155 Mint & Forward | Intercepts semi-fungible mint callbacks and forwards assets atomically. |
+| **Mode 9** | Multi-Claim Batch | Processes multi-protocol claim collections with granular error isolation. |
 
 ### 13.3 Contract Administrative Controls & Upgradability
 
