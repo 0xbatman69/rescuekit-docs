@@ -673,7 +673,7 @@ RescueKit implements modular execution modes conforming to the ERC-7821 standard
 
 - **Non-Upgradable:** Contract logic is immutable. There are no proxies or admin implementation pointers.
 - **Fee Configuration:** Admin functions (`setFeeBps`, `setAffiliateCutBps`, `setFeeRecipient`) can only adjust fee basis points within hardcoded bounds:
-  - Maximum fee limit: `2000` BPS (20.00%).
+  - Maximum fee limit: `1500` BPS (15.00%).
   - Enforced pause: Emergency pause mechanism protects against protocol-level zero-day vulnerabilities.
 
 ### 13.4 Interface Identifiers (`supportsInterface`)
