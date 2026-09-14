@@ -255,7 +255,7 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 - Tokens (ERC-20) and native gas assets incur a 15% protocol recovery fee. The recovering user receives 85% net assets delivered to their safe destination wallet.
 - NFTs (ERC-721 and ERC-1155) have a 0% protocol fee. Rescued NFTs are delivered 100% intact to your safe destination wallet with no fee deduction.
-- On active DeFi lending positions, the 15% fee applies only to the net collateral recovered after outstanding debt and flash loans are fully repaid.
+- On DeFi lending positions, the 15% fee applies only to the net collateral recovered (after any outstanding debt is repaid).
 - Fees are collected in kind directly in the recovered asset with no external price feeds or oracles. For example, recovering 1,000 USDC delivers 850 USDC to your safe wallet and 150 USDC to the protocol.
 - Gas fees are separate from protocol fees and are paid by your sponsor wallet in native network currency directly to blockchain validators.
 
@@ -271,7 +271,7 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 - Protocol fees are collected on-chain before the remaining balance is dispatched to your safe destination wallet. This fee-first order prevents malicious contracts from engineering revert traps on the protocol treasury to rescue assets for free.
 - Always use a clean standard wallet address (EOA) or a verified Safe multisig as your safe destination. If a safe destination cannot receive transfers (such as a contract without a receive function for native currency, or an address blacklisted by centralized tokens like USDC or USDT), that transfer fails on-chain (`CallFailed`) while the fee remains collected.
 - When a destination transfer fails, the remaining 85% stays behind in the compromised wallet where it remains vulnerable to sweeper bots. In that scenario, you will need to execute a new rescue with a clean, working safe wallet to recover the remaining funds, resulting in the 15% fee being charged once again on that remaining balance.
-- If the entire transaction reverts on-chain, all state changes roll back completely via standard EVM execution and zero fees are charged.
+- If the entire transaction reverts on-chain, all state changes roll back completely via standard EVM execution and zero protocol fees are charged.
 
 ---
 
