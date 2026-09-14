@@ -26,6 +26,10 @@
    - 5.1 How It Works
    - 5.2 Token ID Detection & Follow-Up Rescue
    - 5.3 Fees on Mints
+6. [DeFi Lending Collateral Recovery (`/lending`)](#6-defi-lending-collateral-recovery-lending)
+   - 6.1 How It Works
+   - 6.2 Debt Unwind, Idle Positions & Swaps
+   - 6.3 Fees on Lending Recovery
 5. [Authoritative Network & Deployment Directory](#5-authoritative-network--deployment-directory)
    - 5.1 The 19-Chain Mainnet Deployment Matrix
    - 5.2 Deterministic CREATE2 Deployment (`0x0000000004C9B572E8aB03C7A7377AaadEfd3502`)
@@ -216,6 +220,35 @@ If an NFT contract does not support any of these methods, the minted token ID is
 
 - NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your minted and rescued NFTs go directly to your safe wallet.
 - Native Currency: The standard 15% recovery fee applies only if native tokens are swept from the wallet.
+
+---
+
+## 6. DeFi Lending Collateral Recovery (`/lending`)
+
+The Lending page recovers collateral trapped in lending markets (such as Aave v3, Morpho Blue, Moonwell, and Curvance), including active positions with debt and idle deposits without debt.
+
+### 6.1 How It Works
+
+1. Enter your compromised wallet address and select your network(s). You can select multiple networks to scan positions across different chains at the same time.
+2. The scanner automatically detects your lending positions, showing your deposited collateral and any outstanding debt.
+3. Select the positions you want to recover. You can select multiple positions on the same network, or positions across different networks.
+4. Enter your clean safe destination address.
+5. Click **Review**. The app verifies that there is enough on-chain flash loan liquidity to borrow your debt tokens, calculates swap routes (if collateral differs from debt), and verifies sponsor gas.
+6. If a swap is needed, you can adjust the slippage buffer (default is 1%). This buffer sets how much extra collateral is budgeted for the swap to guarantee the flash loan is fully repaid even if prices shift. Any leftover tokens from the swap are safely swept to your safe destination wallet.
+7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the recovery and sweep your net collateral directly into your safe wallet.
+
+### 6.2 Debt Unwind, Idle Positions & Swaps
+
+- When a position has debt, an uncollateralized flash loan borrows the debt amount to repay the lending market and unlock your collateral in one atomic transaction, without needing to deposit funds into the compromised wallet.
+- If your collateral is the same token as your borrowed debt, no swap takes place. The flash loan is repaid directly from the unlocked collateral.
+- If your collateral differs from your borrowed debt (such as WETH collateral with USDC debt), an in-lock swap automatically converts just enough collateral to repay the flash loan.
+- If a position requires a swap but no direct or multi-hop swap route is found, the review modal flags that no route was found, as the debt cannot be settled without an available swap route.
+- If you have collateral deposited with zero debt (an idle position), no flash loan or swap is needed. It directly withdraws and sweeps your collateral to your safe wallet.
+- If an individual debt token lacks on-chain flash loan liquidity, the review modal highlights that position so you can deselect it and continue rescuing your other positions.
+
+### 6.3 Fees on Lending Recovery
+
+- A 15% recovery fee is deducted on-chain directly from the net recovered collateral upon successful rescue. You never pay upfront fees.
 
 ---
 
