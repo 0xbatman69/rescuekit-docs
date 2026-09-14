@@ -13,7 +13,7 @@
    - 1.1 The MEV Sweeper Bot Threat Model
    - 1.2 The EIP-7702 Paradigm Shift
 2. [Quick Start & Operational Workflow](#2-quick-start--operational-workflow)
-   - 2.1 Prerequisites
+   - 2.1 What You Need
    - 2.2 How to Rescue
 3. [Core Technical Architecture & EIP-7702 Mechanics](#3-core-technical-architecture--eip-7702-mechanics)
    - 3.1 EIP-7702 Type-4 Transaction Anatomy
@@ -125,7 +125,7 @@ Crucially, EIP-7702 transactions can be sponsored by an independent, uncompromis
 
 ## 2. Quick Start & Operational Workflow
 
-### 2.1 Prerequisites
+### 2.1 What You Need
 
 - Compromised wallet address and its private key.
 - A clean, uncompromised safe destination address.
