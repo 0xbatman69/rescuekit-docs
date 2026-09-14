@@ -10,25 +10,25 @@
 2. [Quick Start](#2-quick-start)
    - 2.1 What You Need
    - 2.2 How to Rescue
-3. [Token & NFT Rescue (`/transfer`)](#3-token--nft-rescue-transfer)
+3. [Sponsor Wallet](#3-sponsor-wallet)
    - 3.1 How It Works
-   - 3.2 Fees
-4. [Airdrop & Claims Rescue (`/claim`)](#4-airdrop--claims-rescue-claim)
+   - 3.2 Managing Keys & Funds
+   - 3.3 Tips & Safety
+4. [Token & NFT Rescue (`/transfer`)](#4-token--nft-rescue-transfer)
    - 4.1 How It Works
-   - 4.2 Follow-Up Rescues
-   - 4.3 Fees
-5. [NFT Mint Rescue (`/mint`)](#5-nft-mint-rescue-mint)
+   - 4.2 Fees
+5. [Airdrop & Claims Rescue (`/claim`)](#5-airdrop--claims-rescue-claim)
    - 5.1 How It Works
-   - 5.2 Finding Token IDs
+   - 5.2 Follow-Up Rescues
    - 5.3 Fees
-6. [DeFi Lending Rescue (`/lending`)](#6-defi-lending-rescue-lending)
+6. [NFT Mint Rescue (`/mint`)](#6-nft-mint-rescue-mint)
    - 6.1 How It Works
-   - 6.2 Debt Repayment, Swaps & Idle Deposits
+   - 6.2 Finding Token IDs
    - 6.3 Fees
-7. [Sponsor Wallet](#7-sponsor-wallet)
+7. [DeFi Lending Rescue (`/lending`)](#7-defi-lending-rescue-lending)
    - 7.1 How It Works
-   - 7.2 Managing Keys & Funds
-   - 7.3 Tips & Safety
+   - 7.2 Debt Repayment, Swaps & Idle Deposits
+   - 7.3 Fees
 8. [Referral Program (`/refer`)](#8-referral-program-refer)
    - 8.1 How It Works
    - 8.2 Commissions & Payouts
@@ -137,11 +137,35 @@ Crucially, EIP-7702 transactions can be sponsored by an independent, uncompromis
 
 ---
 
-## 3. Token & NFT Rescue (`/transfer`)
+## 3. Sponsor Wallet
+
+The sponsor wallet is a clean burner wallet generated directly in your browser. It pays the gas fees for all your rescue transactions so your compromised wallet never needs to hold native gas.
+
+### 3.1 How It Works
+
+1. Click **Generate Sponsor Wallet** at the top of any rescue page to create your sponsor wallet in one click.
+2. The wallet and its private key are generated client-side in your browser and encrypted locally using 256-bit AES-GCM.
+3. Deposit a small amount of native gas (like ETH, POL, or BNB) into your sponsor wallet on the chain you want to rescue.
+4. When you execute a rescue, the sponsor wallet broadcasts the transaction and pays the gas fees on behalf of your compromised wallet.
+
+### 3.2 Managing Keys & Funds
+
+- Click the three dots on the sponsor card and select **Export Phrase / Key** to view and copy your private key or 12-word seed phrase. You can also import this key into any external wallet app.
+- You can withdraw any unused gas balance from your sponsor wallet back to any safe address directly from the app at any time.
+- Click the three dots on the sponsor card and select **Reset Wallet** to clear and generate a fresh sponsor wallet whenever you want.
+
+### 3.3 Tips & Safety
+
+- Only deposit the gas needed to cover your planned rescues.
+- Do not use the sponsor wallet as a primary wallet or to store personal savings. It is designed solely to pay gas fees for your rescues.
+
+---
+
+## 4. Token & NFT Rescue (`/transfer`)
 
 The Transfer page recovers ERC-20 tokens, native coins, and NFTs already sitting in your compromised wallet.
 
-### 3.1 How It Works
+### 4.1 How It Works
 
 1. Enter your compromised address and select your networks. The scanner checks for tokens, native coins, and NFTs across all selected chains at the same time.
 2. You can rescue multiple tokens, multiple NFTs, or both combined at once. If you selected multiple networks, you can rescue across all of them at the same time with one click.
@@ -149,18 +173,18 @@ The Transfer page recovers ERC-20 tokens, native coins, and NFTs already sitting
 4. Once confirmed via **Review** and **Rescue**, the assets are swept directly into your safe destination wallet.
 5. If an individual token or NFT transfer fails (for example, non-transferrable token or nft), it simply skips that token and continues rescuing the rest of your assets without canceling the entire transaction.
 
-### 3.2 Fees
+### 4.2 Fees
 
 - Tokens & Native Currency: A 15% recovery fee is deducted on-chain directly from the recovered amount during the transfer. You never pay upfront fees.
 - NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your NFTs go directly to your safe wallet.
 
 ---
 
-## 4. Airdrop & Claims Rescue (`/claim`)
+## 5. Airdrop & Claims Rescue (`/claim`)
 
 The Claims page recovers claimable tokens from contracts like airdrops, staking, vesting, and more.
 
-### 4.1 How It Works
+### 5.1 How It Works
 
 1. Enter your compromised address and select your network.
 2. Enter the claim contract address. The app automatically checks the network to verify that the contract exists. If the contract supports common claim functions, it is detected automatically; otherwise, paste your claim calldata.
@@ -170,23 +194,23 @@ The Claims page recovers claimable tokens from contracts like airdrops, staking,
 6. You can add multiple claim boxes to execute different claims together at the same time.
 7. Click **Review** to enter your compromised private key, then click **Rescue** to sweep your tokens directly into your safe wallet.
 
-### 4.2 Follow-Up Rescues
+### 5.2 Follow-Up Rescues
 
 If an individual claim fails (for example, if it expired), it simply skips that claim and continues rescuing your other claims without canceling the entire transaction.
 
 Always enter the correct payout tokens so everything sweeps in the first transaction. If a contract transfers extra or unexpected tokens that you did not enter, an automatic follow-up rescue broadcasts immediately to recover them. However, because this requires a separate transaction, there is a brief on-chain window where tokens could be intercepted. While the follow-up rescue is fast, there is no guarantee in that window, so always double-check your token addresses.
 
-### 4.3 Fees
+### 5.3 Fees
 
 - A 15% recovery fee is deducted on-chain directly from the claimed tokens upon successful sweep. You never pay upfront fees.
 
 ---
 
-## 5. NFT Mint Rescue (`/mint`)
+## 6. NFT Mint Rescue (`/mint`)
 
 The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allowlisted compromised wallet, either sweeping them straight to your safe wallet in the same transaction or executing the mint on its own.
 
-### 5.1 How It Works
+### 6.1 How It Works
 
 1. Enter your compromised wallet address, safe destination address, and select the network where the mint takes place.
 2. Select your Mint Mode from the dropdown:
@@ -198,7 +222,7 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allow
 6. Native tokens in your compromised wallet are swept automatically by default. In Mint + Transfer mode, you can also select existing NFTs in your wallet to sweep them in the same transaction alongside your mint.
 7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the mint and sweep the NFTs directly into your safe wallet.
 
-### 5.2 Finding Token IDs
+### 6.2 Finding Token IDs
 
 Because an NFT's token ID cannot be known before minting, our contract discovers it on-chain during execution using three methods:
 - Receiver hooks: Intercepts standard safe mint callbacks (`onERC721Received` and `onERC1155Received`) to capture and redirect the token ID as it is minted.
@@ -207,18 +231,18 @@ Because an NFT's token ID cannot be known before minting, our contract discovers
 
 If an NFT contract does not support any of these methods, the minted token ID is read from the transaction receipt and an automatic follow-up rescue broadcasts immediately to recover it. However, because this requires a separate transaction, there is a brief on-chain window before it confirms where the NFT could be intercepted, even though the follow-up broadcasts immediately.
 
-### 5.3 Fees
+### 6.3 Fees
 
 - NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your minted and rescued NFTs go directly to your safe wallet.
 - Native Currency: The standard 15% recovery fee applies only if native tokens are swept from the wallet.
 
 ---
 
-## 6. DeFi Lending Rescue (`/lending`)
+## 7. DeFi Lending Rescue (`/lending`)
 
 The Lending page recovers collateral trapped in lending markets (such as Aave v3, Morpho Blue, Moonwell, and Curvance), including active positions with debt and idle deposits without debt.
 
-### 6.1 How It Works
+### 7.1 How It Works
 
 1. Enter your compromised wallet address and select your network(s). You can select multiple networks to scan positions across different chains at the same time.
 2. The scanner automatically detects your lending positions, showing your deposited collateral and any outstanding debt.
@@ -228,7 +252,7 @@ The Lending page recovers collateral trapped in lending markets (such as Aave v3
 6. If a swap is needed, you can adjust the slippage buffer (default is 1%). This buffer sets how much extra collateral is budgeted for the swap to guarantee the flash loan is fully repaid even if prices shift. Any leftover tokens from the swap are safely swept to your safe destination wallet.
 7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the recovery and sweep your net collateral directly into your safe wallet.
 
-### 6.2 Debt Repayment, Swaps & Idle Deposits
+### 7.2 Debt Repayment, Swaps & Idle Deposits
 
 - When a position has debt, an uncollateralized flash loan borrows the debt amount to repay the lending market and unlock your collateral in one atomic transaction, without needing to deposit funds into the compromised wallet.
 - If your collateral is the same token as your borrowed debt, no swap takes place. The flash loan is repaid directly from the unlocked collateral.
@@ -237,33 +261,9 @@ The Lending page recovers collateral trapped in lending markets (such as Aave v3
 - If you have collateral deposited with zero debt (an idle position), no flash loan or swap is needed. It directly withdraws and sweeps your collateral to your safe wallet.
 - If an individual debt token lacks on-chain flash loan liquidity, the review modal highlights that position so you can deselect it and continue rescuing your other positions.
 
-### 6.3 Fees
+### 7.3 Fees
 
 - A 15% recovery fee is deducted on-chain directly from the net recovered collateral upon successful rescue. You never pay upfront fees.
-
----
-
-## 7. Sponsor Wallet
-
-The sponsor wallet is a clean burner wallet generated directly in your browser. It pays the gas fees for all your rescue transactions so your compromised wallet never needs to hold native gas.
-
-### 7.1 How It Works
-
-1. Click **Generate Sponsor Wallet** at the top of any rescue page to create your sponsor wallet in one click.
-2. The wallet and its private key are generated client-side in your browser and encrypted locally using 256-bit AES-GCM.
-3. Deposit a small amount of native gas (like ETH, POL, or BNB) into your sponsor wallet on the chain you want to rescue.
-4. When you execute a rescue, the sponsor wallet broadcasts the transaction and pays the gas fees on behalf of your compromised wallet.
-
-### 7.2 Managing Keys & Funds
-
-- Click the three dots on the sponsor card and select **Export Phrase / Key** to view and copy your private key or 12-word seed phrase. You can also import this key into any external wallet app.
-- You can withdraw any unused gas balance from your sponsor wallet back to any safe address directly from the app at any time.
-- Click the three dots on the sponsor card and select **Reset Wallet** to clear and generate a fresh sponsor wallet whenever you want.
-
-### 7.3 Tips & Safety
-
-- Only deposit the gas needed to cover your planned rescues.
-- Do not use the sponsor wallet as a primary wallet or to store personal savings. It is designed solely to pay gas fees for your rescues.
 
 ---
 
