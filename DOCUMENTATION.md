@@ -15,17 +15,17 @@
 2. [Quick Start & Operational Workflow](#2-quick-start--operational-workflow)
    - 2.1 What You Need
    - 2.2 How to Rescue
-3. [Core Technical Architecture & EIP-7702 Mechanics](#3-core-technical-architecture--eip-7702-mechanics)
-   - 3.1 EIP-7702 Type-4 Transaction Anatomy
-   - 3.2 Ephemeral In-Transaction Delegation
-   - 3.3 ERC-7821 Execution Standard (`execute(bytes32,bytes)`)
-   - 3.4 In-Lock Transient Storage & Reentrancy Guards
-4. [Rescue Products Catalog](#4-rescue-products-catalog)
-   - 4.1 Token & Native Asset Rescue (Mode 1 & Mode 2)
-   - 4.2 ERC-721 & ERC-1155 NFT Rescue (Mode 3)
-   - 4.3 Airdrop, Vesting & Staking Claims Rescue (Mode 6 & Mode 9)
-   - 4.4 DeFi Lending Collateral Recovery (Mode 4 Flash Loans)
-   - 4.5 NFT Mint & Sweep Recovery (Mode 7 & Mode 8)
+3. [Token & NFT Rescue (`/transfer`)](#3-token--nft-rescue-transfer)
+   - 3.1 How It Works
+   - 3.2 Fees on Transfers
+4. [Airdrop & Claims Rescue (`/claim`)](#4-airdrop--claims-rescue-claim)
+   - 4.1 How It Works
+   - 4.2 Follow-Up Rescue & Safety Window
+   - 4.3 Fees on Claims
+5. [NFT Mint Rescue (`/mint`)](#5-nft-mint-rescue-mint)
+   - 5.1 How It Works
+   - 5.2 Token ID Detection & Follow-Up Rescue
+   - 5.3 Fees on Mints
 5. [Authoritative Network & Deployment Directory](#5-authoritative-network--deployment-directory)
    - 5.1 The 19-Chain Mainnet Deployment Matrix
    - 5.2 Deterministic CREATE2 Deployment (`0x0000000004C9B572E8aB03C7A7377AaadEfd3502`)
@@ -133,148 +133,87 @@ Crucially, EIP-7702 transactions can be sponsored by an independent, uncompromis
 
 ### 2.2 How to Rescue
 
-1. Generate a sponsor wallet in the app and deposit the required gas into it.
+1. Create a sponsor wallet in the app and deposit gas into it.
 2. Enter your compromised wallet address and select your network.
-3. Select the assets you want to recover.
+3. Select or enter the items to recover.
 4. Enter your clean safe destination address.
-5. Click **Review**, enter your compromised private key, and make sure your sponsor wallet has enough gas.
-6. Click **Save** in the modal.
-7. Click **Rescue** to broadcast the recovery transaction.
-8. RescueKit automatically sends an undelegation transaction to remove the contract delegation from your compromised wallet.
+5. Click **Review** and enter your compromised private key.
+6. Click **Rescue** to execute the rescue transaction.
 
 ---
 
-## 3. Core Technical Architecture & EIP-7702 Mechanics
+## 3. Token & NFT Rescue (`/transfer`)
 
-### 3.1 EIP-7702 Type-4 Transaction Anatomy
+The Transfer page recovers ERC-20 tokens, native coins, and NFTs already sitting in your compromised wallet.
 
-An EIP-7702 transaction is designated in the EVM as transaction type `0x04`. It introduces a novel field known as the `authorizationList`:
+### 3.1 How It Works
 
-```
-TransactionType: 0x04
-Fields:
-  - chainId: uint256
-  - nonce: uint256 (Sponsor Nonce)
-  - maxPriorityFeePerGas: uint256
-  - maxFeePerGas: uint256
-  - gasLimit: uint256
-  - to: address (Compromised Account)
-  - value: uint256 (0)
-  - data: bytes (ERC-7821 execute calldata)
-  - accessList: AccessList
-  - authorizationList: [
-      {
-        chainId: uint256,
-        address: 0x0000000004C9B572E8aB03C7A7377AaadEfd3502,
-        nonce: uint256 (Compromised Account Nonce),
-        yParity: uint8,
-        r: bytes32,
-        s: bytes32
-      }
-    ]
-  - sponsorSignature (v, r, s signed over Type-4 payload)
-```
+1. Enter your compromised address and select your networks. The scanner checks for tokens, native coins, and NFTs across all selected chains at the same time.
+2. You can rescue multiple tokens, multiple NFTs, or both combined at once. If you selected multiple networks, you can rescue across all of them at the same time with one click.
+3. If a token or NFT does not appear automatically, you can manually enter the contract address (and token ID for NFTs) to include it.
+4. Once confirmed via **Review** and **Rescue**, the assets are swept directly into your safe destination wallet.
+5. If an individual token or NFT transfer fails (for example, non-transferrable token or nft), it simply skips that token and continues rescuing the rest of your assets without canceling the entire transaction.
 
-### 3.2 Ephemeral In-Transaction Delegation
+### 3.2 Fees on Transfers
 
-When the EVM processes an EIP-7702 transaction:
-
-1. **Validation:** The EVM validates that the authorization tuple's `(r, s, yParity)` signature recovers to the compromised account address, that `chainId` matches the active chain (or is `0`), and that `nonce` matches the compromised account's on-chain transaction count.
-2. **Bytecode Delegation:** The EVM prepends designated delegation bytecode (`0xef0100 || implementationAddress`) to the compromised account's state account record.
-3. **Execution Context:** The transaction's `to` address is the compromised account. The call executes against the compromised account's storage and address context (`address(this) == compromisedAccount`), but executes the bytecode defined by `SponsorableBatchExecutor`.
-4. **Caller Semantics:** The `msg.sender` inside the initial call frame is the Sponsor Wallet.
-
-### 3.3 ERC-7821 Execution Standard (`execute(bytes32,bytes)`)
-
-RescueKit strictly implements the ERC-7821 Minimal Batch Executor interface:
-
-```solidity
-function execute(bytes32 mode, bytes calldata executionData) external payable;
-function supportsExecutionMode(bytes32 mode) external pure returns (bool);
-```
-
-The `mode` parameter is a 32-byte bitmask that instructs the executor how to parse and process `executionData`.
-
-```
-ERC-7821 Mode Layout (32 bytes):
-Byte 0: Call Type (0x01 = Single Batch Call)
-Bytes 1-5: Reserved / Flags (0x0000000000)
-Bytes 6-7: Standard Identifier (0x7821)
-Bytes 8-9: Protocol Sub-Mode (0x0001 = OpData, 0x0003 = NFT, 0x0004 = FlashLoan, 0x0006 = Claim, 0x0007 = Mint721, 0x0008 = Mint1155, 0x0009 = MultiClaim)
-Bytes 10-31: Unused / Zero Padding
-```
-
-### 3.4 In-Lock Transient State & Reentrancy Guards
-
-The protocol leverages EIP-1153 transient storage (`TLOAD` / `TSTORE`) on modern EVM chains, and isolated execution flags on legacy target chains, to maintain secure state across complex multi-step operations:
-
-- **Callback Verification:** Isolates active execution contexts during flash loan settlements and NFT mint redirects so unexpected external callbacks cannot trigger unintended state changes.
-- **Zero Cross-Call Contamination:** All transient state flags are asserted upon entry and unconditionally wiped before transaction finalization, providing robust reentrancy protection across nested calls.
+- Tokens & Native Currency: A 15% recovery fee is deducted on-chain directly from the recovered amount during the transfer. You never pay upfront fees.
+- NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your NFTs go directly to your safe wallet.
 
 ---
 
-## 4. Rescue Products Catalog
+## 4. Airdrop & Claims Rescue (`/claim`)
 
-RescueKit delivers five specialized recovery tools, each optimized for specific asset types and smart contract states.
+The Claims page recovers claimable tokens from contracts like airdrops, staking, vesting, and more.
 
-### 4.1 Token & Native Asset Rescue (Mode 1 & Mode 2)
+### 4.1 How It Works
 
-- **Target Assets:** Native gas tokens (ETH, BNB, POL, MON, S, BERA, etc.) and standard ERC-20 tokens.
-- **ERC-7821 Mode:** 
-  - `MODE_1` (`0x0100000000000000000000000000000000000000000000000000000000000000`)
-  - `MODE_2` (`0x0100000000007821000100000000000000000000000000000000000000000000`)
-- **Execution Mechanism:**
-  1. For each ERC-20 token, queries balance via `balanceOf(address(this))`.
-  2. Calculates fee: `feeAmount = (balance * 1500) / 10000` (15%).
-  3. Sends `sendAmount = balance - feeAmount` (85%) directly to `safeDestination`.
-  4. Distributes `feeAmount` between protocol treasury (9% or 15%) and affiliate referrer (6% if active).
-  5. For native tokens, checks account balance above `nativeReserveBalance`. Splits net balance and transfers native currency.
+1. Enter your compromised address and select your network.
+2. Enter the claim contract address. The app automatically checks the network to verify that the contract exists. If the contract supports common claim functions, it is detected automatically; otherwise, paste your claim calldata.
+3. If the claim requires a native fee, enter the amount (like `0.01`) or hex in the Value field, which your sponsor wallet pays. If no fee is required, leave it blank.
+4. The payout token is usually detected and filled in automatically, but always verify that the address is correct (or enter it manually if not detected). Native tokens are swept automatically by default, and you can also sweep existing tokens already sitting in your wallet by adding their contract addresses.
+5. If a claim rewards multiple tokens at once, you can add extra token addresses to sweep all reward tokens together in one transaction.
+6. You can add multiple claim boxes to execute different claims together at the same time.
+7. Once confirmed via **Review** and **Rescue**, the claims execute and the tokens are swept directly into your safe destination wallet.
+8. If an individual claim fails (for example, if it expired), it simply skips that claim and continues rescuing your other claims.
 
-### 4.2 ERC-721 & ERC-1155 NFT Rescue (Mode 3)
+### 4.2 Follow-Up Rescue & Safety Window
 
-- **Target Assets:** Existing non-fungible tokens sitting in the compromised wallet.
-- **ERC-7821 Mode:** `MODE_3` (`0x0100000000007821000300000000000000000000000000000000000000000000`)
-- **Execution Mechanism:**
-  1. Unpacks token calls containing `transferFrom(compromisedAddress, safeDestination, tokenId)` or `safeTransferFrom(...)`.
-  2. Executes transfers sequentially in a single loop.
-  3. **Zero-Fee Guarantee:** No protocol fee is deducted from NFTs. Every NFT is transferred 100% intact to `safeDestination`.
+Always enter the correct payout tokens so everything sweeps in the first transaction. If a contract transfers extra or unexpected tokens that you did not enter, an automatic follow-up rescue broadcasts immediately to recover them. However, because this requires a separate transaction, there is a brief on-chain window where tokens could be intercepted. While the follow-up rescue is fast, there is no guarantee in that window, so always double-check your token addresses.
 
-### 4.3 Airdrop, Vesting & Staking Claims Rescue (Mode 6 & Mode 9)
+### 4.3 Fees on Claims
 
-- **Target Assets:** Unclaimed tokens locked in Merkle distributors, vesting contracts (Sablier, Hedgey), or staking reward pools.
-- **ERC-7821 Mode:** 
-  - `MODE_6` (Direct single-claim contracts)
-  - `MODE_9` (Multi-claim batches across distinct protocols)
-- **Execution Mechanism:**
-  1. Calls the target distributor contract with the user's Merkle proof or claim calldata.
-  2. The claimed tokens land in `address(this)` (the compromised account).
-  3. Within the exact same execution frame, executes an immediate sweep call transferring net tokens to `safeDestination` and settling the protocol fee.
-  4. Sweeper bots cannot frontrun the claimed balance because the claim and sweep happen in the same atomic block step.
+- A 15% recovery fee is deducted on-chain directly from the claimed tokens upon successful sweep. You never pay upfront fees.
 
-### 4.4 DeFi Lending Collateral Recovery (Mode 4 Flash Loans)
+---
 
-- **Target Assets:** Collateral locked in DeFi lending positions where debt prevents direct withdrawal.
-- **ERC-7821 Mode:** `MODE_4` (`0x0100000000007821000400000000000000000000000000000000000000000000`)
-- **Execution Mechanism:**
-  1. Borrows outstanding debt tokens via uncollateralized flash loan (Balancer v3, Morpho Blue, Uniswap v4, or Aave v3).
-  2. Approves lending protocol and executes `repay()` on behalf of the compromised account.
-  3. Executes `withdraw()` or `redeem()` to release 100% of deposited collateral.
-  4. If collateral matches debt asset: repays flash loan principal plus premium directly from recovered collateral.
-  5. If collateral differs from debt asset: routes collateral through an in-lock Uniswap v3/v4 swap to acquire the exact repayment amount.
-  6. Sweeps remaining surplus collateral to `safeDestination` (85% net surplus).
+## 5. NFT Mint Rescue (`/mint`)
 
-### 4.5 NFT Mint & Sweep Recovery (Mode 7 & Mode 8)
+The Mint page lets you mint NFTs (ERC-721 or ERC-1155) directly from an allowlisted or eligible compromised wallet and send them straight to your safe destination wallet in one transaction.
 
-- **Target Assets:** High-value or allowlisted NFT mints allocated to the compromised wallet.
-- **ERC-7821 Mode:** 
-  - `MODE_7` (ERC-721 Mint & Forward)
-  - `MODE_8` (ERC-1155 Mint & Forward)
-- **Execution Mechanism:**
-  1. Sets active mint context storage slot with `safeDestination` and `nftCollection`.
-  2. Invokes external mint function on NFT contract.
-  3. NFT contract calls `onERC721Received` or `onERC1155Received` on the compromised account.
-  4. The executor intercepts the hook and immediately redirects (`safeTransferFrom`) the freshly minted token ID to `safeDestination`.
-  5. Clears mint context slot.
+### 5.1 How It Works
+
+1. Enter your compromised wallet address, safe destination address, and select the network where the mint takes place.
+2. Select your Mint Mode from the dropdown:
+   - **Mint + Transfer**: Mints the NFT and immediately sweeps it directly to your safe wallet in the same transaction.
+   - **Mint only**: Executes the mint function on the contract without sweeping the new NFT out of your wallet.
+3. Enter the Mint Contract Address and paste the Mint Calldata (hex). The app automatically checks the network to verify that the contract exists.
+4. If the mint has a mint fee in native currency, enter the amount (like `0.01` or hex `0x...`) in the Mint Price field. Your sponsor wallet pays this fee for you. For free mints, leave this blank.
+5. In Mint + Transfer mode, if the NFT collection is the same contract as the mint contract, leave the NFT Contract Address blank. If the collection is a separate contract from the minting contract, enter the NFT contract address.
+6. You can also select and sweep existing NFTs already sitting in your wallet in the same transaction alongside your mint.
+7. Once confirmed via **Review** and **Rescue**, the sponsor wallet funds the gas and mint fee, executes the mint, and sweeps the minted NFT straight to your safe wallet.
+
+### 5.2 Token ID Detection & Follow-Up Rescue
+
+Because an NFT's token ID cannot be known before minting, our contract discovers it on-chain during execution using three methods:
+- Receiver hooks: Intercepts standard safe mint callbacks (`onERC721Received` and `onERC1155Received`) to capture and redirect the token ID as it is minted.
+- Return data: Decodes the token ID directly from the mint function's return value.
+- Supply queries: Checks `nextTokenId()` or `totalSupply()` on the collection contract to determine the new token ID.
+
+If an NFT contract does not support any of these methods, the minted token ID is read from the transaction receipt and an automatic follow-up rescue broadcasts immediately to recover it. However, because this requires a separate transaction, there is a brief on-chain window before it confirms where the NFT could be intercepted, even though the follow-up broadcasts immediately.
+
+### 5.3 Fees on Mints
+
+- NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your minted NFTs go directly to your safe wallet.
 
 ---
 
