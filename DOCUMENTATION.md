@@ -36,54 +36,10 @@
    - 9.1 Fee Breakdown by Asset
    - 9.2 Referral Split
    - 9.3 Transfer Order & Safe Destination Requirements
-5. [Authoritative Network & Deployment Directory](#5-authoritative-network--deployment-directory)
-   - 5.1 The 19-Chain Mainnet Deployment Matrix
-   - 5.2 Deterministic CREATE2 Deployment (`0x0000000004C9B572E8aB03C7A7377AaadEfd3502`)
-   - 5.3 Per-Chain RPC, Gas Pricing & Mempool Topologies
-6. [Supported Assets & Protocol Integrations](#6-supported-assets--protocol-integrations)
-   - 6.1 Token Standard Compatibility (ERC-20, Rebasing, Fee-on-Transfer)
-   - 6.2 NFT Standard Compatibility (ERC-721, ERC-1155, Soulbound Rejections)
-   - 6.3 Integrated Lending Protocols (Aave v3, Morpho Blue, Moonwell, Curvance)
-   - 6.4 Flash Loan Providers & Routing Priority (Balancer v3, Morpho, Uniswap v4, Aave v3)
-   - 6.5 On-Chain DEX Swaps & Liquidity Routing
-8. [Transaction Construction, Gas Dynamics & Type-4 Lifecycle](#8-transaction-construction-gas-dynamics--type-4-lifecycle)
-   - 8.1 The Two-Component Gas Equation (Gas Units vs. Gwei Price)
-   - 8.2 Analytical Gas-Unit Fallback Formulas (`rescueGasFallback`)
-   - 8.3 Live Fee Pricing Multipliers & Network Spikes
-   - 8.4 Receipt Polling, Confirmation Timeouts & Nonce Coordination
-9. [Security Architecture, Threat Vectors & Trust Boundaries](#9-security-architecture-threat-vectors--trust-boundaries)
-   - 9.1 Private Key Isolation & Client-Side Ephemeral Signing
-   - 9.2 Cryptographic Replay Protection & Chain ID Domain Separation
-   - 9.3 Frontrunning, Mempool Leakage & Private Relay Routing
-   - 9.4 What RescueKit Protects Against vs. What It Does Not Protect Against
-12. [Smart Contracts & Technical Interface Reference](#12-smart-contracts--technical-interface-reference)
-    - 12.1 `SponsorableBatchExecutor` Contract Specification
-    - 12.2 Execution Modes & Bitmask Flags
-    - 12.3 Contract Administrative Controls & Upgradability
-    - 12.4 Interface Identifiers (`supportsInterface`)
-13. [User Input Field Reference & Validation Matrix](#13-user-input-field-reference--validation-matrix)
-    - 13.1 Compromised Wallet Address & Key
-    - 13.2 Safe Destination Address
-    - 13.3 Sponsor Wallet Address & Key
-    - 13.4 Contract Addresses, Token IDs & Call Data
-14. [Error Reference, Contract Reverts & Failure Resolutions](#14-error-reference-contract-reverts--failure-resolutions)
-    - 14.1 Smart Contract Custom Revert Errors
-    - 14.2 Client-Side Validation & Simulation Rejections
-    - 14.3 EVM JSON-RPC & Broadcast Rejections
-15. [The "What Happens If..." Real-World Edge Case Directory](#15-the-what-happens-if-real-world-edge-case-directory)
-    - 15.1 Asset & State Alterations
-    - 15.2 Transaction Execution & Network Failures
-    - 15.3 Protocol & Financial Edge Cases
-16. [Architectural Comparisons & Industry Alternatives](#16-architectural-comparisons--industry-alternatives)
-    - 16.1 RescueKit vs. Flashbots Private Bundles
-    - 16.2 RescueKit vs. ERC-4337 Account Abstraction
-    - 16.3 RescueKit vs. Direct Account Gas Funding
-17. [Comprehensive FAQ](#17-comprehensive-faq)
-18. [Protocol Limitations & Known Issues](#18-protocol-limitations--known-issues)
-19. [Technical Glossary](#19-technical-glossary)
-20. [Documentation Fact & Verification Ledger](#20-documentation-fact--verification-ledger)
-21. [Version History & Protocol Changelog](#21-version-history--protocol-changelog)
-22. [Developer REST API Reference](./api/rest-api-reference.md)
+10. [Supported Networks](#10-supported-networks)
+11. [What RescueKit Can & Cannot Do](#11-what-rescuekit-can--cannot-do)
+    - 11.1 What RescueKit Can Do
+    - 11.2 What RescueKit Cannot Do
 
 ---
 
@@ -214,8 +170,8 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allow
 
 1. Enter your compromised wallet address, safe destination address, and select the network where the mint takes place.
 2. Select your Mint Mode from the dropdown:
-   - **Mint + Transfer**: Mints the NFT and immediately sweeps it directly to your safe wallet in the same transaction.
-   - **Mint only**: Executes the mint function on the contract without sweeping the new NFT out of your wallet.
+   - Mint + Transfer: Mints the NFT and immediately sweeps it directly to your safe wallet in the same transaction.
+   - Mint only: Executes the mint function on the contract without sweeping the new NFT out of your wallet.
 3. Enter the Mint Contract Address and paste the Mint Calldata (hex). The app automatically checks the network to verify that the contract exists.
 4. If the mint has a mint fee in native currency, enter the amount (like `0.01` or hex `0x...`) in the Mint Price field. Your sponsor wallet pays this fee for you. For free mints, leave this blank.
 5. In Mint + Transfer mode, if the NFT collection is the same contract as the mint contract, leave the NFT Contract Address blank. If the collection is a separate contract from the minting contract, enter the NFT contract address.
@@ -319,363 +275,48 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 ---
 
-## 5. Authoritative Network & Deployment Directory
+## 10. Supported Networks
 
-### 5.1 The 19-Chain Mainnet Deployment Matrix
+RescueKit is deployed and verified across 19 EVM mainnets. All deployments share the identical contract address: `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
 
-The following matrix represents the verified production deployments across all 19 supported EVM mainnets. All deployments are live mainnets; testnets are strictly excluded.
-
-| # | Network | Chain ID | Native Gas Token | Contract Address | Public RPC Endpoint | 7702 Readiness | Status |
-|---|---|---|---|---|---|---|---|
-| 1 | **Ethereum** | 1 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://eth.drpc.org` | Live | Production |
-| 2 | **Base** | 8453 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://mainnet.base.org` | Live | Production |
-| 3 | **BNB Chain** | 56 | BNB | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://binance.nodereal.io` | Live | Production |
-| 4 | **Arbitrum One** | 42161 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://arb1.arbitrum.io/rpc` | Live | Production |
-| 5 | **Polygon** | 137 | POL | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://polygon-bor-rpc.publicnode.com` | Live | Production |
-| 6 | **Optimism** | 10 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://mainnet.optimism.io` | Live | Production |
-| 7 | **Monad** | 143 | MON | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://rpc.monad.xyz` | Live | Production |
-| 8 | **Sonic** | 146 | S | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://sonic.drpc.org` | Live | Production |
-| 9 | **Robinhood** | 4663 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://rpc.mainnet.chain.robinhood.com` | Live | Production |
-| 10 | **Berachain** | 80094 | BERA | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://rpc.berachain.com` | Live | Production |
-| 11 | **MegaETH** | 4326 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://mainnet.megaeth.com/rpc` | Live | Production |
-| 12 | **Linea** | 59144 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://rpc.linea.build` | Live | Production |
-| 13 | **Ink** | 57073 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://rpc-qnd.inkonchain.com` | Live | Production |
-| 14 | **Unichain** | 130 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://mainnet.unichain.org` | Live | Production |
-| 15 | **Sei** | 1329 | SEI | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://evm-rpc.sei-apis.com` | Live | Production |
-| 16 | **World Chain** | 480 | ETH | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://worldchain-mainnet.g.alchemy.com/public` | Live | Production |
-| 17 | **Somnia** | 5031 | SOMI | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://api.infra.mainnet.somnia.network` | Live | Production |
-| 18 | **Plasma** | 9745 | XPL | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://plasma.gateway.tenderly.co` | Live | Production |
-| 19 | **Plume** | 98866 | PLUME | `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | `https://rpc.plume.org` | Live | Production |
-
-### 5.2 Deterministic CREATE2 Deployment (`0x0000000004C9B572E8aB03C7A7377AaadEfd3502`)
-
-All 19 networks share an identical contract address:
-`0x0000000004C9B572E8aB03C7A7377AaadEfd3502`
-
-- **9-Zero Vanity Prefix:** Mined via optimized CREATE2 salt derivation to save calldata gas during EIP-7702 authorization list inclusion.
-- **Immutability:** Deployed via immutable factory bytecode using `solc 0.8.37`.
-- **Global Parameter:** Standard across all EVM environments, preventing cross-chain address confusion.
-
-### 5.3 Per-Chain RPC, Gas Pricing & Mempool Topologies
-
-```
-Network Typologies:
-1. Sequencer L2s (Base, Optimism, Arbitrum, Linea, Ink, Unichain, World Chain, Plume):
-   - Single sequencer; no public mempool competition.
-   - Low tip multiplier (1x-2x), 3x base fee buffer for spike absorption.
-2. Parallel EVM / High-Throughput (Monad, Sonic, MegaETH, Sei, Somnia):
-   - Monad: Gas war ordering via tip bid (5x tip multiplier), bills on gasLimit. Minimum reserve: 10.5 MON.
-3. Legacy / Public Mempool Chains (BNB Chain, Polygon):
-   - Public transaction pool where bots observe unconfirmed transactions.
-   - Requires 5x priority tip bids or private relay broadcast.
-```
-
----
-
-## 6. Supported Assets & Protocol Integrations
-
-### 6.1 Token Standard Compatibility
-
-- **Standard ERC-20:** Fully supported. Balances are queried and swept atomically.
-- **Rebasing Tokens (e.g., stETH, AMPL):** Supported. The protocol queries `balanceOf(address(this))` immediately at execution time, accurately capturing the current balance.
-- **Fee-on-Transfer Tokens:** Supported with safety buffers. RescueKit measures actual balance transferred rather than assuming nominal amounts.
-
-### 6.2 NFT Standard Compatibility
-
-- **ERC-721:** Fully supported across single transfers and batches. 0% protocol fee.
-- **ERC-1155:** Fully supported for both single token IDs and batch transfers (`safeBatchTransferFrom`).
-- **Soulbound / Non-Transferable Tokens:** **Not Supported.** Any attempt to execute a transfer on a non-transferable token (e.g., ENS Name Wrapper under specific fuses, soulbound badges) will cause the transaction to revert.
-
-### 6.3 Integrated Lending Protocols
-
-RescueKit integrates native liquidation and withdrawal adapters for major lending protocols:
-
-| Protocol | Version | Supported Chains | Architecture |
+| # | Network | Chain ID | Native Gas Token |
 |---|---|---|---|
-| **Aave** | v3 | Ethereum, Base, Polygon, Arbitrum, Optimism, BSC, Monad, Sonic, Linea, Plasma | Pool / DataProvider Collateral Withdrawal |
-| **Morpho** | Blue | Ethereum, Base, Monad | Market-based isolated lending pools |
-| **Moonwell** | Core | Base, Optimism | Compound v2 style cToken redemption |
-| **Curvance** | v1 | Monad | High-performance modular money market |
-
-### 6.4 Flash Loan Providers & Routing Priority
-
-When recovering collateral from active loans, the protocol dynamically routes flash loan requests based on liquidity and borrowing fees:
-
-1. **Balancer v3:** 0% Fee (0 BPS). Primary provider on Ethereum, Base, Arbitrum, Optimism, Sonic.
-2. **Morpho Blue:** 0% Fee (0 BPS). Secondary provider for single-asset flash loans.
-3. **Uniswap v4:** 0% Flash Fee (In-lock flash swaps via PoolManager unlock callback).
-4. **Aave v3:** 0.05% Fee (5 BPS). Fallback provider with deep multi-asset liquidity pools across 10 chains.
-
-### 6.5 On-Chain DEX Swaps & Liquidity Routing
-
-When rescued collateral differs from the flash-borrowed debt token, RescueKit executes an in-transaction swap to satisfy flash loan repayment:
-
-- **Verified Routers:** Configured across 8 DEX chains with verified on-chain Uniswap v3/v4 Router, Quoter, and Factory contracts.
-- **Exact Output Swapping:** Calls `swapExactTokensForTokens` with precise output targets matching flash loan principal plus accrued fee.
-- **Slippage Bounds:** Hardcoded maximum slippage threshold (1.00% to 2.50%) to prevent sandwich attack MEV exploitation inside the block.
+| 1 | Ethereum | 1 | ETH |
+| 2 | Base | 8453 | ETH |
+| 3 | BNB Chain | 56 | BNB |
+| 4 | Arbitrum One | 42161 | ETH |
+| 5 | Polygon | 137 | POL |
+| 6 | Optimism | 10 | ETH |
+| 7 | Monad | 143 | MON |
+| 8 | Sonic | 146 | S |
+| 9 | Robinhood | 4663 | ETH |
+| 10 | Berachain | 80094 | BERA |
+| 11 | MegaETH | 4326 | ETH |
+| 12 | Linea | 59144 | ETH |
+| 13 | Ink | 57073 | ETH |
+| 14 | Unichain | 130 | ETH |
+| 15 | Sei | 1329 | SEI |
+| 16 | World Chain | 480 | ETH |
+| 17 | Somnia | 5031 | SOMI |
+| 18 | Plasma | 9745 | XPL |
+| 19 | Plume | 98866 | PLUME |
 
 ---
 
-## 8. Transaction Construction, Gas Dynamics & Type-4 Lifecycle
-
-### 8.1 Gas Budgeting Architecture
-
-Executing an EIP-7702 asset rescue requires coordinating two fundamental parameters:
-
-1. **Gas Units (Limit):** The computational capacity budgeted to complete all batch steps.
-2. **Gwei Price (Per-Unit Cost):** The live market fee (base fee + priority tip) paid to network validators/sequencers.
-
-### 8.2 Analytical Gas Budgeting & RPC Resilience
-
-Public RPC endpoints frequently fail to accurately simulate gas limits for EIP-7702 transactions when evaluating accounts that are not yet delegated on-chain. To eliminate transaction reverts caused by faulty RPC simulations, RescueKit implements an analytical gas estimation engine:
-
-- **Operation-Specific Scaling:** Dynamically scales gas limits based on the operational complexity of the rescue—accounting for the exact number of transfer calls, claim proofs, or lending position repayments.
-- **Complex Flow Allocations:** Heavy execution paths (such as multi-hop flash loan repayments and debt liquidations) receive conservative gas unit buffers to ensure safe execution under unexpected state conditions.
-- **Deterministic Reliability:** Because this budget is computed analytically, transactions can be reliably signed and broadcast even when public RPC node estimators produce unreliable results.
-
-### 8.3 Dynamic Fee Pricing & Priority Inclusion
-
-To prevent MEV frontrunning and ensure immediate block inclusion:
-
-- **Adaptive Base Buffering:** Incorporates dynamic base fee headrooms to absorb rapid block-to-block fee spikes without dropping from the block builder queue.
-- **Competitive Priority Bidding:** Scales priority tips according to the network's specific mempool model—applying focused inclusion bids on sequencer L2s and competitive priority pricing on competitive public mempools.
-- **Fail-Safe Price Guards:** If an RPC endpoint returns zero or invalid gas fee data, the client halts broadcast automatically to protect the user from broadcasting dead transactions.
-
-### 8.4 Receipt Polling, Confirmation Timeouts & Nonce Coordination
-
-- **Adaptive Receipt Polling:** Optimizes polling intervals based on network block times (from ultra-fast sub-second parallel chains to standard L2 block times).
-- **Sponsor Nonce Tracking:** Synchronizes against pending transaction counts to allow rapid consecutive recoveries without nonce collisions.
-
----
-
-## 9. Security Architecture, Threat Vectors & Trust Boundaries
-
-### 9.1 Private Key Isolation & Client-Side Ephemeral Signing
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                      CLIENT BROWSER                     │
-│  Compromised Key ──> Ephemeral Memory (viem Account)   │
-│                             │                           │
-│                      signAuthorization()                │
-│                             │                           │
-│                             ▼                           │
-│                 EIP-7702 Signature Tuple                │
-│                  { chainId, address, nonce, r, s, y }    │
-└─────────────────────────────┬───────────────────────────┘
-                              │ (Public Payload Only)
-                              ▼
-                  Broadcasted to Network RPC
-          (Private Key NEVER Leaves Browser Memory)
-```
-
-- **Zero Exfiltration:** The compromised private key is never transmitted over HTTP, WebSockets, or remote logging services.
-- **Memory Destruction:** Keys held in React component state are cleared upon tab closure or session reset.
-
-### 9.2 Cryptographic Replay Protection & Chain ID Domain Separation
-
-- **EIP-7702 Tuples:** Include explicit `chainId`. An authorization signed for Base (`8453`) cannot be replayed on Ethereum (`1`) or Monad (`143`).
-- **Nonce Invalidation:** Every executed transaction increments the compromised account's nonce, permanently invalidating prior authorization tuples.
-
-### 9.3 Frontrunning, Mempool Leakage & Private Relay Routing
-
-- **Sequencer L2s:** Transactions submitted to Base, Arbitrum, Optimism, etc., route directly to the chain's private sequencer endpoint, bypassing public P2P mempools.
-- **Public Mempool Networks (BSC, Polygon):** Autonomous monitoring engines broadcast via private transaction relays (e.g., Flashbots / bloXroute) to prevent MEV searchers from unbundling calldata.
-
-### 9.4 What RescueKit Protects Against vs. What It Does Not Protect Against
-
-#### What RescueKit Protects Against:
-- Sweeper bots monitoring for inbound gas transfers.
-- Re-delegation hijacking during the recovery block.
-- Flash loan repayment failures (atomic rollback).
-- Incomplete approvals or orphaned token approvals.
-
-#### What RescueKit Does NOT Protect Against:
-- **Pre-Existing Depletion:** Assets already transferred out by the attacker prior to RescueKit execution cannot be recovered.
-- **Compromised Safe Destination:** If the user supplies an attacker-controlled address as the safe destination, assets are sent to the attacker.
-- **Compromised Sponsor Wallet:** If the sponsor wallet's key is also leaked, sweeper bots will drain the sponsor wallet's native gas before broadcast.
-
----
-
-## 12. Smart Contracts & Technical Interface Reference
-
-### 12.1 `SponsorableBatchExecutor` Contract Specification
-
-- **Contract Name:** `SponsorableBatchExecutor`
-- **Solidity Version:** `^0.8.20` (Deployed via `0.8.37`)
-- **Canonical Address:** `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`
-- **Compiler Optimizations:** Enabled (200 runs)
-
-### 12.2 Execution Modes & Protocol Capabilities
-
-RescueKit implements modular execution modes conforming to the ERC-7821 standard:
-
-| Mode ID | Protocol Capability | Execution Description |
-|---|---|---|
-| **Mode 1** | Standard Single Batch | Executes sequential atomic calls without extra operational metadata. |
-| **Mode 2** | Batch with Operational Data | Executes batch calls alongside contextual parameter decoding. |
-| **Mode 3** | NFT Sponsor Rescue | Sweeps ERC-721 and ERC-1155 tokens directly to safety with 0% protocol fee. |
-| **Mode 4** | Flash Loan Lending Batch | Manages flash loan borrowing, debt payoff, collateral redemption, and repayment. |
-| **Mode 6** | Direct Claim Batch | Claims airdrops or vesting tokens and sweeps net balances in one step. |
-| **Mode 7** | ERC-721 Mint & Forward | Intercepts NFT mint callbacks and redirects tokens to the safe destination. |
-| **Mode 8** | ERC-1155 Mint & Forward | Intercepts semi-fungible mint callbacks and forwards assets atomically. |
-| **Mode 9** | Multi-Claim Batch | Processes multi-protocol claim collections with granular error isolation. |
-
-### 12.3 Contract Administrative Controls & Upgradability
-
-- **Non-Upgradable:** Contract logic is immutable. There are no proxies or admin implementation pointers.
-- **Fee Configuration:** Admin functions (`setFeeBps`, `setAffiliateCutBps`, `setFeeRecipient`) can only adjust fee basis points within hardcoded bounds:
-  - Maximum fee limit: `1500` BPS (15.00%).
-  - Enforced pause: Emergency pause mechanism protects against protocol-level zero-day vulnerabilities.
-
-### 12.4 Interface Identifiers (`supportsInterface`)
-
-The contract returns `true` for:
-- `0x01ffc9a7`: ERC-165 Standard Interface Detection
-- `0x150b7a02`: ERC-721 Token Receiver (`onERC721Received`)
-- `0x4e2312e0`: ERC-1155 Token Receiver (`onERC1155Received` / `onERC1155BatchReceived`)
-
----
-
-## 13. User Input Field Reference & Validation Matrix
-
-| Field Name | Format | Required | Validation Rule | Invalid Behavior | Empty Behavior |
-|---|---|---|---|---|---|
-| **Compromised Key** | 64-char Hex (`0x...`) | Yes | Must derive valid secp256k1 public address | Rejects with "Invalid private key format" | Submit button disabled |
-| **Safe Destination** | 40-char Hex Address | Yes | Must pass EIP-55 checksum validation | Rejects with "Invalid destination address" | Submit button disabled |
-| **Sponsor Wallet** | Connected Web3 Provider | Yes | Must have native balance $\ge$ gas estimate | Surfaces "Insufficient sponsor balance" | Blocks review modal |
-| **Token Address** | 40-char Hex Address | Optional | Must be deployed contract on active network | Displays "Contract not found on chain" | Ignored |
-| **NFT Token ID** | Unsigned Integer (`uint256`) | Optional | Must be owned by compromised address | Excluded during scan | Ignored |
-| **Claim Calldata** | Raw ABI Hex Bytes | Optional | Must decode against target distributor ABI | Reverts simulation: "Invalid claim payload" | Bypasses claim step |
-
----
-
-## 14. Error Reference, Contract Reverts & Failure Resolutions
-
-### 14.1 Smart Contract Custom Revert Errors
-
-- **`UnsupportedExecutionMode()`**
-  - *Cause:* Calldata specified an ERC-7821 execution mode not supported by the contract.
-  - *Resolution:* Rebuild calldata using supported modes (1, 2, 3, 4, 6, 7, 8, 9).
-- **`Unauthorized()`**
-  - *Cause:* Direct call to internal execution routines without proper signature authorization context.
-  - *Resolution:* Ensure transaction is signed via EIP-7702 authorization list tuple.
-- **`SlippageExceeded()`**
-  - *Cause:* In-lock swap yielded less than `amountOutMinimum` during flash loan debt settlement.
-  - *Resolution:* Increase slippage tolerance or wait for pool liquidity to normalize.
-- **`EnforcedPause()`**
-  - *Cause:* Protocol administrative pause is active.
-  - *Resolution:* Check official protocol status announcements.
-
-### 14.2 Client-Side Validation & Simulation Rejections
-
-- **`"Insufficient sponsor balance"`**
-  - *Cause:* Sponsor wallet does not hold enough native gas tokens to cover the worst-case gas limit.
-  - *Resolution:* Deposit additional native gas tokens into the Sponsor Wallet.
-- **`"Compromised account nonce mismatch"`**
-  - *Cause:* On-chain nonce changed between authorization signing and broadcast.
-  - *Resolution:* Re-sign the authorization tuple with the updated nonce.
-
----
-
-## 15. The "What Happens If..." Real-World Edge Case Directory
-
-### 15.1 Asset & State Alterations
-
-- **What if assets disappear before execution?**
-  - If a sweeper bot moves an ERC-20 token before RescueKit's transaction is included, the `balanceOf` query inside the contract returns `0`. The contract skips the zero-balance transfer and continues sweeping remaining assets without reverting.
-- **What if an airdrop claim expires?**
-  - If the distributor contract reverts because the claim window closed, the atomic batch reverts. Mode 9 multi-claim batches can be configured with soft-failure flags to bypass reverted sub-claims.
-
-### 15.2 Transaction Execution & Network Failures
-
-- **What if the lending repayment fails?**
-  - If collateral cannot satisfy debt repayment or flash loan repayment fails, the entire transaction reverts atomically. No collateral is lost, and the loan remains in its prior state.
-- **What if the RPC endpoint goes offline during broadcast?**
-  - The client automatically retries against configured fallback RPC endpoints (`fallbackRpcs`) without requiring re-signing.
-- **What if I close or refresh the browser tab?**
-  - If broadcast has already occurred, the transaction executes on-chain independently. If broadcast has not occurred, ephemeral memory is cleared and no transaction is sent.
-
-### 15.3 Protocol & Financial Edge Cases
-
-- **What if the wallet is rescued twice?**
-  - The second rescue executes normally if new assets have arrived. If no assets exist, zero-value calls execute harmlessly, costing only sponsor gas.
-- **What if the affiliate payment fails?**
-  - Outbound affiliate transfer reverts are caught. The commission is routed to the treasury and the user's asset recovery completes without interruption.
-
----
-
-## 16. Architectural Comparisons & Industry Alternatives
-
-| Feature | RescueKit (EIP-7702) | Flashbots Bundles | Traditional Sweeping | Smart Contract Wallets (ERC-4337) |
-|---|---|---|---|---|
-| **Compromised Wallet Gas Funding** | **0 ETH (Zero)** | 0 ETH (Miner Tip) | **Requires Gas Funding** | 0 ETH (Paymaster) |
-| **Sweeper Bot Exploitation Risk** | **Zero Funding Gap** | Low (Mempool private) | **Extreme (Immediate theft)** | Zero Funding Gap |
-| **Supported Chains** | **19 EVM Mainnets** | Ethereum Only | Any | Network Dependent |
-| **DeFi Debt Liquidation Support** | **Built-in Flash Loans** | Complex manual setup | Not supported | Requires custom paymaster |
-| **Account Ownership Changes** | **None (Ephemeral)** | None | None | Requires account migration |
-| **NFT Support** | **100% Free (0% Fee)** | Manual bundle cost | Manual transfer | Paymaster gas sponsor |
-
----
-
-## 17. Comprehensive FAQ
-
-#### Q: How does RescueKit bypass sweeper bots?
-A: Sweeper bots can only steal assets if they have gas to transfer or if gas is deposited into the compromised account. RescueKit sponsors transactions externally via EIP-7702. Because the compromised account never receives gas, the bot has nothing to take.
-
-#### Q: Is my private key uploaded to a server?
-A: No. Private keys are used strictly inside your browser's local memory to sign an EIP-7702 authorization tuple. They are never transmitted over the internet.
-
-#### Q: What chains are supported?
-A: All 19 major EVM production mainnets listed in Section 5.1 are fully supported.
-
-#### Q: What fee does RescueKit charge?
-A: A 15% protocol fee is deducted on-chain exclusively from recovered fungible assets and native currency upon successful execution. NFTs are rescued completely free of protocol fees.
-
----
-
-## 18. Protocol Limitations & Known Issues
-
-1. **Non-Empty Calldata Native Call Fee Bypass:** In current contract builds, non-empty data native calls can theoretically bypass the fee split if constructed manually outside the official builder. The official builder always routes through the auto-split path.
-2. **Public Mempool Frontrunning on BSC/Polygon:** On networks lacking sequencer privacy, high-priority public mempool transactions can theoretically be observed by sophisticated MEV bots capable of parsing 7702 calldata. Private relays are enforced for automated engines on these chains.
-3. **RPC 7702 Simulation Inconsistencies:** Some third-party RPC providers do not yet support `eth_estimateGas` simulations with an `authorizationList`. The protocol bypasses this using deterministic fallback formulas.
-
----
-
-## 19. Technical Glossary
-
-- **EIP-7702:** Ethereum Improvement Proposal enabling EOAs to temporarily designate smart contract execution code for a single transaction.
-- **ERC-7821:** Minimal batch execution interface standard defining `execute(bytes32 mode, bytes executionData)`.
-- **Sponsor Wallet:** An uncompromised secondary account used exclusively to pay native network gas fees for the recovery transaction.
-- **Sweeper Bot:** An automated script monitoring compromised accounts to instantly frontrun and steal deposited gas tokens.
-- **Type-4 Transaction:** An EVM transaction carrying an EIP-7702 `authorizationList`.
-
----
-
-## 20. Documentation Fact & Verification Ledger
-
-| Fact / Assertion | Evidence Source | Technical Verification Path | Status |
-|---|---|---|---|
-| 19 Supported Mainnet Chains | `packages/chains/src/index.ts` & Live Bundle | `CHAINS.length == 19` confirmed on live Vercel build | **VERIFIED** |
-| Deterministic Contract Address | `deploy_all_create2.mjs` | CREATE2 calculation `0x0000000004C9B572E8aB03C7A7377AaadEfd3502` | **VERIFIED** |
-| 1500 BPS Protocol Fee | `SponsorableBatchExecutor.sol` | `_getFeeBps() == 1500n` | **VERIFIED** |
-| 600 BPS Affiliate Cut | `SponsorableBatchExecutor.sol` | `_getAffiliateCutBps() == 600n` | **VERIFIED** |
-| 0% Protocol Fee on NFTs | `SponsorableBatchExecutor.sol` | `_runMintBatch721` transfers full token without fee deduction | **VERIFIED** |
-| Client-Side Key Handling | `packages/web/src/services/rescue.ts` | `privateKeyToAccount` invoked locally in browser context | **VERIFIED** |
-| Flash Loan Providers | `packages/batch/src/lending/flashloans/` | Aave v3, Balancer v3, Morpho Blue, Uniswap v4 implementations | **VERIFIED** |
-
----
-
-## 21. Version History & Protocol Changelog
-
-- **v2.4.0 (Current):**
-  - Added Plume Network mainnet deployment, expanding registry to 19 chains.
-  - Deployed 9-zero `SponsorableBatchExecutor` vanity address across all networks.
-  - Integrated Moonwell and Morpho isolated lending collateral recovery.
-  - Integrated in-lock Uniswap v4 flash swaps.
-- **v2.3.0:**
-  - Standardized protocol fee at 15.00% (1500 BPS) with 6.00% (600 BPS) affiliate cut across all deployed chains.
-  - Added Curvance money market recovery for Monad.
-- **v2.2.0:**
-  - Migrated chain architecture to self-contained per-chain strategy modules.
-  - Implemented analytical gas-unit fallback formulas (`rescueGasFallback`).
+## 11. What RescueKit Can & Cannot Do
+
+### 11.1 What RescueKit Can Do
+
+- Rescue ERC-20 tokens, native coins, and NFTs in a single transaction without funding your compromised wallet with gas (your sponsor wallet pays the gas).
+- Rescue single or multiple claims (such as airdrops, vesting, or staking) on a chain in a single transaction, or execute across multiple chains at the same time.
+- Mint new NFTs and sweep existing NFTs to your safe wallet in a single transaction.
+- Rescue trapped collateral from DeFi lending positions, which includes idle positions and positions with debt, both.
+
+### 11.2 What RescueKit Cannot Do
+
+- Recover funds that were already stolen or transferred out before your rescue.
+- Recover funds if you enter an attacker-controlled or compromised safe destination address.
+- Rescue non-transferable or soulbound tokens and NFTs that cannot be moved on-chain.
+- Protect your sponsor wallet if you leak or compromise the sponsor wallet's own private key or seed phrase.
+- Reverse transactions once confirmed on the blockchain.
+- Guarantee newly minted NFTs are swept in the same transaction if the NFT contract does not support standard discovery methods (which triggers a follow-up rescue instead).
