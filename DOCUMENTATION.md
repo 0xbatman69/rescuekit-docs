@@ -89,7 +89,7 @@
 
 ## 1. Introduction
 
-RescueKit is a mission-critical asset recovery protocol engineered specifically for compromised Ethereum Virtual Machine (EVM) accounts. By harnessing Ethereum Improvement Proposal 7702 (EIP-7702), RescueKit enables users to recover tokens, non-fungible tokens (NFTs), unclaimed airdrops, vesting releases, and collateral locked in decentralized finance (DeFi) lending markets without ever funding the compromised account with native gas.
+RescueKit helps you recover trapped funds from hacked or compromised EVM wallets. By using EIP-7702, a separate clean wallet pays the gas fees so automated sweeper bots never get a chance to steal your gas. You can rescue tokens, NFTs, unclaimed airdrops, and DeFi lending positions directly into a safe wallet in a single transaction.
 
 ### 1.1 How Sweeper Bots Work
 
@@ -130,7 +130,7 @@ Crucially, EIP-7702 transactions can be sponsored by an independent, uncompromis
 
 1. Create a sponsor wallet in the app and deposit gas into it.
 2. Enter your compromised wallet address and select your network.
-3. Select or enter the items to recover.
+3. Select or enter the details to rescue.
 4. Enter your clean safe destination address.
 5. Click **Review** and enter your compromised private key.
 6. Click **Rescue** to execute the rescue transaction.
