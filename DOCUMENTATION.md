@@ -30,6 +30,13 @@
    - 6.1 How It Works
    - 6.2 Debt Unwind, Idle Positions & Swaps
    - 6.3 Fees on Lending Recovery
+7. [Sponsor Wallet](#7-sponsor-wallet)
+   - 7.1 How It Works
+   - 7.2 Keys & Management
+   - 7.3 Best Practices
+8. [Referral Program (`/refer`)](#8-referral-program-refer)
+   - 8.1 How It Works
+   - 8.2 Commission & Payout Mechanics
 5. [Authoritative Network & Deployment Directory](#5-authoritative-network--deployment-directory)
    - 5.1 The 19-Chain Mainnet Deployment Matrix
    - 5.2 Deterministic CREATE2 Deployment (`0x0000000004C9B572E8aB03C7A7377AaadEfd3502`)
@@ -56,15 +63,6 @@
    - 9.2 Cryptographic Replay Protection & Chain ID Domain Separation
    - 9.3 Frontrunning, Mempool Leakage & Private Relay Routing
    - 9.4 What RescueKit Protects Against vs. What It Does Not Protect Against
-10. [Sponsor Wallet Architecture & Operational Mechanics](#10-sponsor-wallet-architecture--operational-mechanics)
-    - 10.1 Sponsor Wallet Definition & Isolation
-    - 10.2 Sponsor Funding Requirements & Calculations
-    - 10.3 Unused Gas Balance Reclamation
-11. [Referral & Affiliate Commission System](#11-referral--affiliate-commission-system)
-    - 11.1 On-Chain Affiliate Attribution
-    - 11.2 Self-Referral Prevention Logic
-    - 11.3 Gas-Stipended Transfer Isolation (50,000 Gas Guard)
-    - 11.4 Fallback Protocol Routing upon Affiliate Reversion
 12. [Smart Contracts & Technical Interface Reference](#12-smart-contracts--technical-interface-reference)
     - 12.1 `SponsorableBatchExecutor` Contract Specification
     - 12.2 Execution Modes & Bitmask Flags
@@ -249,6 +247,53 @@ The Lending page recovers collateral trapped in lending markets (such as Aave v3
 ### 6.3 Fees on Lending Recovery
 
 - A 15% recovery fee is deducted on-chain directly from the net recovered collateral upon successful rescue. You never pay upfront fees.
+
+---
+
+## 7. Sponsor Wallet
+
+The sponsor wallet is a clean burner wallet generated directly in your browser. It pays the gas fees for all your rescue transactions so your compromised wallet never needs to hold native gas.
+
+### 7.1 How It Works
+
+1. Click **Generate Sponsor Wallet** at the top of any rescue page to create your sponsor wallet in one click.
+2. The wallet and its private key are generated client-side in your browser and encrypted locally using 256-bit AES-GCM.
+3. Deposit a small amount of native gas (like ETH, POL, or BNB) into your sponsor wallet on the chain you want to rescue.
+4. When you execute a rescue, the sponsor wallet broadcasts the transaction and pays the gas fees on behalf of your compromised wallet.
+
+### 7.2 Keys & Management
+
+- Click the three dots on the sponsor card and select **Export Phrase / Key** to view and copy your private key or 12-word seed phrase. You can also import this key into any external wallet app.
+- You can withdraw any unused gas balance from your sponsor wallet back to any safe address directly from the app at any time.
+- Click the three dots on the sponsor card and select **Reset Wallet** to clear and generate a fresh sponsor wallet whenever you want.
+
+### 7.3 Best Practices
+
+- Only deposit the gas needed to cover your planned rescues.
+- Do not use the sponsor wallet as a primary wallet or to store personal savings. It is designed solely to pay gas fees for your rescues.
+
+---
+
+## 8. Referral Program (`/refer`)
+
+The Referral page lets you generate a personal referral link to earn on-chain commissions by helping others recover their funds from compromised wallets.
+
+### 8.1 How It Works
+
+1. Go to the **Refer & Earn** page (`/refer`).
+2. Enter your payout address (any clean EVM wallet where you want to receive commissions).
+3. Copy your unique referral link or save the QR code to share.
+4. When someone opens your link, your payout address is remembered in their browser for their rescues.
+5. When they complete a successful rescue, 6% of the recovered assets are sent directly to your payout address in the exact same transaction.
+
+### 8.2 Commission & Payout Mechanics
+
+- The standard recovery fee on tokens and native assets is 15%. When a rescue happens through a referral link, 6% goes to the referrer and 9% goes to the protocol. The recovering user always receives their full 85% net assets whether they use a referral link or not.
+- NFTs are rescued with 0% protocol fee, so no referral fee applies to NFT rescues.
+- Payouts are instant and on-chain. There are no claim portals, points, or withdrawal delays—commissions land in your wallet the moment the rescue transaction confirms.
+- Commission applies to the referred wallet's first successful rescue on each supported network. For example, if a user rescues on Ethereum, you receive commission on Ethereum. If they also rescue on Monad, you receive commission on Monad. Any subsequent rescues by the same wallet on the same network do not pay a commission.
+- Anti-self-referral checks prevent an account from earning commissions on its own rescues. The referrer address cannot be the compromised wallet, the sponsor wallet, or the safe destination address.
+- If a referrer payout address is a smart contract that rejects the transfer, the commission routes to the protocol so the rescue transaction never fails. Always use a standard wallet address (EOA) so you never miss out on payouts.
 
 ---
 
@@ -479,57 +524,6 @@ To prevent MEV frontrunning and ensure immediate block inclusion:
 - **Pre-Existing Depletion:** Assets already transferred out by the attacker prior to RescueKit execution cannot be recovered.
 - **Compromised Safe Destination:** If the user supplies an attacker-controlled address as the safe destination, assets are sent to the attacker.
 - **Compromised Sponsor Wallet:** If the sponsor wallet's key is also leaked, sweeper bots will drain the sponsor wallet's native gas before broadcast.
-
----
-
-## 10. Sponsor Wallet Architecture & Operational Mechanics
-
-### 10.1 Sponsor Wallet Definition & Isolation
-
-The Sponsor Wallet is an independent EOA created specifically to supply gas fees. 
-
-- **Security Isolation:** The Sponsor Wallet must have **zero historical link** to the compromised private key.
-- **Key Separation:** Compromised wallet signs the EIP-7702 authorization tuple; Sponsor wallet signs and broadcasts the Type-4 transaction.
-
-### 10.2 Sponsor Funding Requirements & Calculations
-
-The minimum native gas required in the Sponsor Wallet is determined by:
-
-$$\text{Required Native Balance} = \text{Gas Units} \times (\text{Base Fee} + \text{Priority Fee})$$
-
-If the Sponsor Wallet balance is below this threshold, the review modal disables execution and prompts the user with the exact missing native balance required.
-
-### 10.3 Unused Gas Balance Reclamation
-
-Gas limits configured on EVM transactions represent caps, not fixed charges (with the exception of Monad's gasLimit billing):
-- Any unused gas units remain in the Sponsor Wallet.
-- The user can immediately transfer remaining funds out of the Sponsor Wallet once the recovery confirms.
-
----
-
-## 11. Referral & Affiliate Commission System
-
-### 11.1 On-Chain Affiliate Attribution
-
-RescueKit implements a permissionless referral system embedded directly into `SponsorableBatchExecutor.sol`:
-
-- **Referral Code:** Encodes the affiliate's EVM address.
-- **Execution Parameter:** Passed as the `referrer` address inside `executionData`.
-- **Commission Split:** The affiliate receives 6.00% (600 BPS) of gross recovered assets directly from the protocol fee.
-
-### 11.2 Self-Referral Prevention Logic
-
-To protect protocol revenue and maintain fair affiliate incentives, RescueKit enforces strict on-chain validation:
-
-- **Destination Separation:** If the designated `safeDestination` address matches the `referrer` address, referral attribution is automatically disabled, and the full fee routes to the protocol treasury.
-- **Immutable Check:** This verification executes directly inside the smart contract during the transfer phase, making it impossible to circumvent via client-side manipulation.
-
-### 11.3 Gas-Stipended Transfer Isolation
-
-To ensure that an affiliate's receiving contract cannot intentionally or unintentionally revert the entire recovery batch:
-
-- **Execution Isolation:** Outbound affiliate commission transfers are isolated with a strict gas stipend.
-- **Reversion Handling:** If an affiliate address cannot receive funds (e.g., an unhandled fallback or out-of-gas error), the failure is caught, an event is emitted, and the affiliate portion routes to the protocol treasury. The primary recovery to the user's safe destination **succeeds completely without interruption**.
 
 ---
 
