@@ -200,7 +200,7 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allow
 3. Enter the Mint Contract Address and paste the Mint Calldata (hex). The app automatically checks the network to verify that the contract exists.
 4. If the mint has a mint fee in native currency, enter the amount (like `0.01` or hex `0x...`) in the Mint Price field. Your sponsor wallet pays this fee for you. For free mints, leave this blank.
 5. In Mint + Transfer mode, if the NFT collection is the same contract as the mint contract, leave the NFT Contract Address blank. If the collection is a separate contract from the minting contract, enter the NFT contract address.
-6. Native tokens are swept automatically by default in both modes, and you can also select and sweep existing NFTs already sitting in your wallet in the same transaction alongside your mint.
+6. Native tokens in your compromised wallet are swept automatically by default. In Mint + Transfer mode, you can also select existing NFTs in your wallet to sweep them in the same transaction alongside your mint.
 7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the mint and sweep the NFTs directly into your safe wallet.
 
 ### 5.2 Token ID Detection & Follow-Up Rescue
