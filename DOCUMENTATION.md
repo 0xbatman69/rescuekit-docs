@@ -307,10 +307,11 @@ RescueKit is deployed and verified across 19 EVM mainnets. All deployments share
 
 ### 11.1 What RescueKit Can Do
 
-- Rescue ERC-20 tokens, native coins, and NFTs in a single transaction without funding your compromised wallet with gas (your sponsor wallet pays the gas).
-- Rescue single or multiple claims (such as airdrops, vesting, or staking) on a chain in a single transaction, or execute across multiple chains at the same time.
+- Rescue without funding your compromised wallet with gas (your sponsor wallet pays the gas).
+- Rescue single or multiple ERC-20 tokens, native coins, and NFTs on a chain in a single transaction, or execute across multiple chains at the same time.
+- Rescue single or multiple claims on a chain in a single transaction, or execute across multiple chains at the same time.
 - Mint new NFTs and sweep existing NFTs to your safe wallet in a single transaction.
-- Rescue trapped collateral from DeFi lending positions, which includes idle positions and positions with debt, both.
+- Rescue trapped collateral from single or multiple DeFi lending positions (which includes idle positions and positions with debt, both) on a chain in a single transaction, or execute across multiple chains at the same time.
 
 ### 11.2 What RescueKit Cannot Do
 
