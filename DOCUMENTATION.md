@@ -12,11 +12,9 @@
 1. [Introduction & Executive Overview](#1-introduction--executive-overview)
    - 1.1 The MEV Sweeper Bot Threat Model
    - 1.2 The EIP-7702 Paradigm Shift
-   - 1.3 Core Protocol Principles & Trust Boundaries
 2. [Quick Start & Operational Workflow](#2-quick-start--operational-workflow)
-   - 2.1 Prerequisites & Operational Requirements
-   - 2.2 End-to-End Execution Sequence
-   - 2.3 Post-Recovery Account Sanitation
+   - 2.1 Prerequisites
+   - 2.2 How to Rescue
 3. [Core Technical Architecture & EIP-7702 Mechanics](#3-core-technical-architecture--eip-7702-mechanics)
    - 3.1 EIP-7702 Type-4 Transaction Anatomy
    - 3.2 Ephemeral In-Transaction Delegation
@@ -63,38 +61,34 @@
     - 11.2 Self-Referral Prevention Logic
     - 11.3 Gas-Stipended Transfer Isolation (50,000 Gas Guard)
     - 11.4 Fallback Protocol Routing upon Affiliate Reversion
-12. [REST API Specification & Execution Models](#12-rest-api-specification--execution-models)
-    - 12.1 `/api/build` — Calldata & Batch Construction
-    - 12.2 `/api/execute` — Server-Side Execution Pipeline
-    - 12.3 `/api/broadcast` — Direct Raw Transaction Relay
-    - 12.4 Rate Limiting & Denial-of-Service Mitigations
-13. [Smart Contracts & Technical Interface Reference](#13-smart-contracts--technical-interface-reference)
-    - 13.1 `SponsorableBatchExecutor` Contract Specification
-    - 13.2 Execution Modes & Bitmask Flags
-    - 13.3 Contract Administrative Controls & Upgradability
-    - 13.4 Interface Identifiers (`supportsInterface`)
-14. [User Input Field Reference & Validation Matrix](#14-user-input-field-reference--validation-matrix)
-    - 14.1 Compromised Wallet Address & Key
-    - 14.2 Safe Destination Address
-    - 14.3 Sponsor Wallet Address & Key
-    - 14.4 Contract Addresses, Token IDs & Call Data
-15. [Error Reference, Contract Reverts & Failure Resolutions](#15-error-reference-contract-reverts--failure-resolutions)
-    - 15.1 Smart Contract Custom Revert Errors
-    - 15.2 Client-Side Validation & Simulation Rejections
-    - 15.3 EVM JSON-RPC & Broadcast Rejections
-16. [The "What Happens If..." Real-World Edge Case Directory](#16-the-what-happens-if-real-world-edge-case-directory)
-    - 16.1 Asset & State Alterations
-    - 16.2 Transaction Execution & Network Failures
-    - 16.3 Protocol & Financial Edge Cases
-17. [Architectural Comparisons & Industry Alternatives](#17-architectural-comparisons--industry-alternatives)
-    - 17.1 RescueKit vs. Flashbots Private Bundles
-    - 17.2 RescueKit vs. ERC-4337 Account Abstraction
-    - 17.3 RescueKit vs. Direct Account Gas Funding
-18. [Comprehensive FAQ](#18-comprehensive-faq)
-19. [Protocol Limitations & Known Issues](#19-protocol-limitations--known-issues)
-20. [Technical Glossary](#20-technical-glossary)
-21. [Documentation Fact & Verification Ledger](#21-documentation-fact--verification-ledger)
-22. [Version History & Protocol Changelog](#22-version-history--protocol-changelog)
+12. [Smart Contracts & Technical Interface Reference](#12-smart-contracts--technical-interface-reference)
+    - 12.1 `SponsorableBatchExecutor` Contract Specification
+    - 12.2 Execution Modes & Bitmask Flags
+    - 12.3 Contract Administrative Controls & Upgradability
+    - 12.4 Interface Identifiers (`supportsInterface`)
+13. [User Input Field Reference & Validation Matrix](#13-user-input-field-reference--validation-matrix)
+    - 13.1 Compromised Wallet Address & Key
+    - 13.2 Safe Destination Address
+    - 13.3 Sponsor Wallet Address & Key
+    - 13.4 Contract Addresses, Token IDs & Call Data
+14. [Error Reference, Contract Reverts & Failure Resolutions](#14-error-reference-contract-reverts--failure-resolutions)
+    - 14.1 Smart Contract Custom Revert Errors
+    - 14.2 Client-Side Validation & Simulation Rejections
+    - 14.3 EVM JSON-RPC & Broadcast Rejections
+15. [The "What Happens If..." Real-World Edge Case Directory](#15-the-what-happens-if-real-world-edge-case-directory)
+    - 15.1 Asset & State Alterations
+    - 15.2 Transaction Execution & Network Failures
+    - 15.3 Protocol & Financial Edge Cases
+16. [Architectural Comparisons & Industry Alternatives](#16-architectural-comparisons--industry-alternatives)
+    - 16.1 RescueKit vs. Flashbots Private Bundles
+    - 16.2 RescueKit vs. ERC-4337 Account Abstraction
+    - 16.3 RescueKit vs. Direct Account Gas Funding
+17. [Comprehensive FAQ](#17-comprehensive-faq)
+18. [Protocol Limitations & Known Issues](#18-protocol-limitations--known-issues)
+19. [Technical Glossary](#19-technical-glossary)
+20. [Documentation Fact & Verification Ledger](#20-documentation-fact--verification-ledger)
+21. [Version History & Protocol Changelog](#21-version-history--protocol-changelog)
+22. [Developer REST API Reference](./api/rest-api-reference.md)
 
 ---
 
@@ -126,49 +120,27 @@ EIP-7702 introduces an ephemeral smart contract delegation standard for External
 
 Crucially, EIP-7702 transactions can be sponsored by an independent, uncompromised account (the "Sponsor Wallet"). The sponsor wallet pays 100% of the native gas required to broadcast and execute the transaction. The compromised account never receives, holds, or spends native gas tokens, completely starving the sweeper bot of an exploitation vector.
 
-### 1.3 Core Protocol Principles & Trust Boundaries
-
-RescueKit is governed by five absolute technical rules:
-
-1. **Zero Compromised Gas Funding:** Under no operational circumstance is native gas deposited into the compromised account.
-2. **Transaction-Level Atomicity:** Approvals, claim executions, flash loans, debt repayments, asset transfers, fee distributions, and implementation delegations occur atomically in one single EVM transaction. If any critical sub-step fails, the entire transaction reverts, ensuring no stranded allowances or half-executed states.
-3. **Client-Side Key Isolation:** Private keys entered into the browser client are executed strictly in ephemeral memory within the local browser context via Web Workers or cryptographic libraries. Private keys are never logged, serialized, or transmitted to any remote backend server.
-4. **Autonomous Fee Deduction:** Protocol recovery fees are deducted on-chain directly from the recovered assets in the same atomic transaction. The user never prepays protocol fees out of pocket.
-5. **No Absolute Security Guarantees:** Recovery viability is constrained by blockchain state, transaction inclusion speed, mempool architecture, and whether the sweeper bot has already executed on-chain liquidation or transfer calls.
 
 ---
 
 ## 2. Quick Start & Operational Workflow
 
-### 2.1 Prerequisites & Operational Requirements
+### 2.1 Prerequisites
 
-To execute an asset recovery via RescueKit, the operator must prepare:
+- Compromised wallet address and its private key.
+- A clean, uncompromised safe destination address.
+- A sponsor wallet created on RescueKit, funded with enough gas for the network fee.
 
-- **Compromised Account Key:** The private key of the compromised EOA (required to cryptographically sign the EIP-7702 authorization tuple).
-- **Clean Safe Destination Address:** A newly generated, uncompromised wallet address (hardware wallet, fresh EOA, or Safe multisig) where recovered assets will be sent.
-- **Clean Sponsor Wallet:** An uncompromised EOA with a small native gas balance on the target network to broadcast and sponsor the transaction.
+### 2.2 How to Rescue
 
-### 2.2 End-to-End Execution Sequence
-
-```
-1. Operator Connects Sponsor Wallet (Pays Gas)
-2. Operator Inputs Safe Destination Address (Receives Assets)
-3. Operator Inputs Compromised Account Private Key (Client-Side Only)
-4. Scanner Queries RPC Multicall3 for Balances, NFTs, Claims, and DeFi Debts
-5. Operator Selects Assets to Recover
-6. Builder Constructs ERC-7821 Batch Calldata
-7. Client Requests EIP-7702 Authorization Signature from Compromised Key
-8. Sponsor Signs & Broadcasts Type-4 Transaction via Public RPC or Relay
-9. Executor Contract Atomically Sweeps Assets to Safe Destination (85% Net)
-10. Protocol Fee (15%) and Affiliate Commission (6%) Settled On-Chain
-```
-
-### 2.3 Post-Recovery Account Sanitation
-
-Because an EIP-7702 authorization temporarily delegates an EOA's code execution to `SponsorableBatchExecutor`, the delegation naturally expires or remains pointing to the executor contract. 
-
-- **State Independence:** Even if the delegation remains active, the compromised account cannot be exploited through RescueKit because every call requires an authorized cryptographic digest or signature matching the sender context.
-- **Undelegation (Optional):** If desired, the compromised account can sign an EIP-7702 authorization tuple designating `address(0)` as the implementation address, clearing any delegated bytecode upon execution.
+1. Generate a sponsor wallet in the app and deposit the required gas into it.
+2. Enter your compromised wallet address and select your network.
+3. Select the assets you want to recover.
+4. Enter your clean safe destination address.
+5. Click **Review**, enter your compromised private key, and make sure your sponsor wallet has enough gas.
+6. Click **Save** in the modal.
+7. Click **Rescue** to broadcast the recovery transaction.
+8. RescueKit automatically sends an undelegation transaction to remove the contract delegation from your compromised wallet.
 
 ---
 
@@ -587,74 +559,16 @@ To ensure that an affiliate's receiving contract cannot intentionally or uninten
 
 ---
 
-## 12. REST API Specification & Execution Models
+## 12. Smart Contracts & Technical Interface Reference
 
-The RescueKit backend provides three high-performance REST API endpoints for programmatic integration.
-
-### 12.1 `/api/build` — Calldata & Batch Construction
-
-- **Method:** `POST`
-- **Headers:** `Content-Type: application/json`
-- **Purpose:** Compiles recovery parameters into ERC-7821 compliant batch execution calldata and computes authorization hashes.
-
-#### Request Schema:
-```json
-{
-  "chainId": 8453,
-  "action": "rescue",
-  "compromised": "0x9f3...a21",
-  "safeDestination": "0x4c8...7be",
-  "sponsor": "0x1b2...9f0",
-  "tokens": [
-    { "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "amount": "1000000000" }
-  ],
-  "nftItems": [],
-  "referrer": "0x2735fAfD319155d8F7548d4FD68222cDbE808F39"
-}
-```
-
-#### Response Schema:
-```json
-{
-  "success": true,
-  "data": {
-    "to": "0x9f3...a21",
-    "erc7821Address": "0x0000000004C9B572E8aB03C7A7377AaadEfd3502",
-    "executionData": "0x...",
-    "mode": "0x0100000000007821000100000000000000000000000000000000000000000000",
-    "digest": "0x..."
-  }
-}
-```
-
-### 12.2 `/api/execute` — Server-Side Execution Pipeline
-
-- **Method:** `POST`
-- **Purpose:** Full end-to-end execution for automated recovery agents.
-- **Payload:** Accepts signed EIP-7702 authorization tuples along with sponsor credentials to broadcast transactions directly to the network.
-
-### 12.3 `/api/broadcast` — Direct Raw Transaction Relay
-
-- **Method:** `POST`
-- **Purpose:** Relays pre-signed Type-4 transactions directly through configured private RPC nodes or Flashbots relays.
-
-### 12.4 Rate Limiting & Denial-of-Service Mitigations
-
-- **Limiter:** Sliding-window IP rate limiting (60 requests per minute).
-- **Abuse Prevention:** Malformed payloads or invalid contract addresses return `HTTP 400 Bad Request` with structured error messages.
-
----
-
-## 13. Smart Contracts & Technical Interface Reference
-
-### 13.1 `SponsorableBatchExecutor` Contract Specification
+### 12.1 `SponsorableBatchExecutor` Contract Specification
 
 - **Contract Name:** `SponsorableBatchExecutor`
 - **Solidity Version:** `^0.8.20` (Deployed via `0.8.37`)
 - **Canonical Address:** `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`
 - **Compiler Optimizations:** Enabled (200 runs)
 
-### 13.2 Execution Modes & Protocol Capabilities
+### 12.2 Execution Modes & Protocol Capabilities
 
 RescueKit implements modular execution modes conforming to the ERC-7821 standard:
 
@@ -669,14 +583,14 @@ RescueKit implements modular execution modes conforming to the ERC-7821 standard
 | **Mode 8** | ERC-1155 Mint & Forward | Intercepts semi-fungible mint callbacks and forwards assets atomically. |
 | **Mode 9** | Multi-Claim Batch | Processes multi-protocol claim collections with granular error isolation. |
 
-### 13.3 Contract Administrative Controls & Upgradability
+### 12.3 Contract Administrative Controls & Upgradability
 
 - **Non-Upgradable:** Contract logic is immutable. There are no proxies or admin implementation pointers.
 - **Fee Configuration:** Admin functions (`setFeeBps`, `setAffiliateCutBps`, `setFeeRecipient`) can only adjust fee basis points within hardcoded bounds:
   - Maximum fee limit: `1500` BPS (15.00%).
   - Enforced pause: Emergency pause mechanism protects against protocol-level zero-day vulnerabilities.
 
-### 13.4 Interface Identifiers (`supportsInterface`)
+### 12.4 Interface Identifiers (`supportsInterface`)
 
 The contract returns `true` for:
 - `0x01ffc9a7`: ERC-165 Standard Interface Detection
@@ -685,7 +599,7 @@ The contract returns `true` for:
 
 ---
 
-## 14. User Input Field Reference & Validation Matrix
+## 13. User Input Field Reference & Validation Matrix
 
 | Field Name | Format | Required | Validation Rule | Invalid Behavior | Empty Behavior |
 |---|---|---|---|---|---|
@@ -698,9 +612,9 @@ The contract returns `true` for:
 
 ---
 
-## 15. Error Reference, Contract Reverts & Failure Resolutions
+## 14. Error Reference, Contract Reverts & Failure Resolutions
 
-### 15.1 Smart Contract Custom Revert Errors
+### 14.1 Smart Contract Custom Revert Errors
 
 - **`UnsupportedExecutionMode()`**
   - *Cause:* Calldata specified an ERC-7821 execution mode not supported by the contract.
@@ -715,7 +629,7 @@ The contract returns `true` for:
   - *Cause:* Protocol administrative pause is active.
   - *Resolution:* Check official protocol status announcements.
 
-### 15.2 Client-Side Validation & Simulation Rejections
+### 14.2 Client-Side Validation & Simulation Rejections
 
 - **`"Insufficient sponsor balance"`**
   - *Cause:* Sponsor wallet does not hold enough native gas tokens to cover the worst-case gas limit.
@@ -726,16 +640,16 @@ The contract returns `true` for:
 
 ---
 
-## 16. The "What Happens If..." Real-World Edge Case Directory
+## 15. The "What Happens If..." Real-World Edge Case Directory
 
-### 16.1 Asset & State Alterations
+### 15.1 Asset & State Alterations
 
 - **What if assets disappear before execution?**
   - If a sweeper bot moves an ERC-20 token before RescueKit's transaction is included, the `balanceOf` query inside the contract returns `0`. The contract skips the zero-balance transfer and continues sweeping remaining assets without reverting.
 - **What if an airdrop claim expires?**
   - If the distributor contract reverts because the claim window closed, the atomic batch reverts. Mode 9 multi-claim batches can be configured with soft-failure flags to bypass reverted sub-claims.
 
-### 16.2 Transaction Execution & Network Failures
+### 15.2 Transaction Execution & Network Failures
 
 - **What if the lending repayment fails?**
   - If collateral cannot satisfy debt repayment or flash loan repayment fails, the entire transaction reverts atomically. No collateral is lost, and the loan remains in its prior state.
@@ -744,7 +658,7 @@ The contract returns `true` for:
 - **What if I close or refresh the browser tab?**
   - If broadcast has already occurred, the transaction executes on-chain independently. If broadcast has not occurred, ephemeral memory is cleared and no transaction is sent.
 
-### 16.3 Protocol & Financial Edge Cases
+### 15.3 Protocol & Financial Edge Cases
 
 - **What if the wallet is rescued twice?**
   - The second rescue executes normally if new assets have arrived. If no assets exist, zero-value calls execute harmlessly, costing only sponsor gas.
@@ -753,7 +667,7 @@ The contract returns `true` for:
 
 ---
 
-## 17. Architectural Comparisons & Industry Alternatives
+## 16. Architectural Comparisons & Industry Alternatives
 
 | Feature | RescueKit (EIP-7702) | Flashbots Bundles | Traditional Sweeping | Smart Contract Wallets (ERC-4337) |
 |---|---|---|---|---|
@@ -766,7 +680,7 @@ The contract returns `true` for:
 
 ---
 
-## 18. Comprehensive FAQ
+## 17. Comprehensive FAQ
 
 #### Q: How does RescueKit bypass sweeper bots?
 A: Sweeper bots can only steal assets if they have gas to transfer or if gas is deposited into the compromised account. RescueKit sponsors transactions externally via EIP-7702. Because the compromised account never receives gas, the bot has nothing to take.
@@ -782,7 +696,7 @@ A: A 15% protocol fee is deducted on-chain exclusively from recovered fungible a
 
 ---
 
-## 19. Protocol Limitations & Known Issues
+## 18. Protocol Limitations & Known Issues
 
 1. **Non-Empty Calldata Native Call Fee Bypass:** In current contract builds, non-empty data native calls can theoretically bypass the fee split if constructed manually outside the official builder. The official builder always routes through the auto-split path.
 2. **Public Mempool Frontrunning on BSC/Polygon:** On networks lacking sequencer privacy, high-priority public mempool transactions can theoretically be observed by sophisticated MEV bots capable of parsing 7702 calldata. Private relays are enforced for automated engines on these chains.
@@ -790,7 +704,7 @@ A: A 15% protocol fee is deducted on-chain exclusively from recovered fungible a
 
 ---
 
-## 20. Technical Glossary
+## 19. Technical Glossary
 
 - **EIP-7702:** Ethereum Improvement Proposal enabling EOAs to temporarily designate smart contract execution code for a single transaction.
 - **ERC-7821:** Minimal batch execution interface standard defining `execute(bytes32 mode, bytes executionData)`.
@@ -800,7 +714,7 @@ A: A 15% protocol fee is deducted on-chain exclusively from recovered fungible a
 
 ---
 
-## 21. Documentation Fact & Verification Ledger
+## 20. Documentation Fact & Verification Ledger
 
 | Fact / Assertion | Evidence Source | Technical Verification Path | Status |
 |---|---|---|---|
@@ -814,7 +728,7 @@ A: A 15% protocol fee is deducted on-chain exclusively from recovered fungible a
 
 ---
 
-## 22. Version History & Protocol Changelog
+## 21. Version History & Protocol Changelog
 
 - **v2.4.0 (Current):**
   - Added Plume Network mainnet deployment, expanding registry to 19 chains.
