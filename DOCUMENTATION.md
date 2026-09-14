@@ -52,13 +52,13 @@ RescueKit helps you recover trapped funds from hacked or compromised EVM wallets
 When an account's private key or seed phrase leaks, automated MEV sweeper bots monitor the address across public transaction mempools and block builders. Sweeper bots maintain persistent RPC subscriptions listening for inbound transfers:
 
 ```
-[Attacker Bot] ──(Listens)──> Compromised Account
+[Attacker Bot] ──(Monitors)──> Compromised Account
       │
 [User sends 0.01 ETH Gas] ──> Compromised Account
       │
 [Attacker Bot detects 0.01 ETH in Mempool/Block]
       │
-[Attacker Bot frontruns with 10x gas] ──> Sweeps 0.01 ETH to Attacker Wallet
+[Attacker Bot immediately sweeps the gas] ──> Sweeps 0.01 ETH to Attacker Wallet
       │
 [Result] Compromised Account Balance = 0 ETH. Trapped Assets remain stuck.
 ```
@@ -279,27 +279,27 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 RescueKit is deployed and verified across 19 EVM mainnets. All deployments share the identical contract address: `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
 
-| # | Network | Chain ID | Native Gas Token |
-|---|---|---|---|
-| 1 | Ethereum | 1 | ETH |
-| 2 | Base | 8453 | ETH |
-| 3 | BNB Chain | 56 | BNB |
-| 4 | Arbitrum One | 42161 | ETH |
-| 5 | Polygon | 137 | POL |
-| 6 | Optimism | 10 | ETH |
-| 7 | Monad | 143 | MON |
-| 8 | Sonic | 146 | S |
-| 9 | Robinhood | 4663 | ETH |
-| 10 | Berachain | 80094 | BERA |
-| 11 | MegaETH | 4326 | ETH |
-| 12 | Linea | 59144 | ETH |
-| 13 | Ink | 57073 | ETH |
-| 14 | Unichain | 130 | ETH |
-| 15 | Sei | 1329 | SEI |
-| 16 | World Chain | 480 | ETH |
-| 17 | Somnia | 5031 | SOMI |
-| 18 | Plasma | 9745 | XPL |
-| 19 | Plume | 98866 | PLUME |
+| Network | Chain ID | Native Gas Token |
+|---|---|---|
+| Ethereum | 1 | ETH |
+| Base | 8453 | ETH |
+| BNB Chain | 56 | BNB |
+| Arbitrum One | 42161 | ETH |
+| Polygon | 137 | POL |
+| Optimism | 10 | ETH |
+| Monad | 143 | MON |
+| Sonic | 146 | S |
+| Robinhood | 4663 | ETH |
+| Berachain | 80094 | BERA |
+| MegaETH | 4326 | ETH |
+| Linea | 59144 | ETH |
+| Ink | 57073 | ETH |
+| Unichain | 130 | ETH |
+| Sei | 1329 | SEI |
+| World Chain | 480 | ETH |
+| Somnia | 5031 | SOMI |
+| Plasma | 9745 | XPL |
+| Plume | 98866 | PLUME |
 
 ---
 
