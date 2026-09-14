@@ -20,7 +20,7 @@
    - 3.2 Fees on Transfers
 4. [Airdrop & Claims Rescue (`/claim`)](#4-airdrop--claims-rescue-claim)
    - 4.1 How It Works
-   - 4.2 Follow-Up Rescue & Safety Window
+   - 4.2 Failure Handling & Safety Window
    - 4.3 Fees on Claims
 5. [NFT Mint Rescue (`/mint`)](#5-nft-mint-rescue-mint)
    - 5.1 How It Works
@@ -169,14 +169,15 @@ The Claims page recovers claimable tokens from contracts like airdrops, staking,
 
 1. Enter your compromised address and select your network.
 2. Enter the claim contract address. The app automatically checks the network to verify that the contract exists. If the contract supports common claim functions, it is detected automatically; otherwise, paste your claim calldata.
-3. If the claim requires a native fee, enter the amount (like `0.01`) or hex in the Value field, which your sponsor wallet pays. If no fee is required, leave it blank.
+3. If the claim requires a native fee, enter the amount (like `0.01` or hex `0x...`) in the Value field. Your sponsor wallet pays this fee for you. If no fee is required, leave it blank.
 4. The payout token is usually detected and filled in automatically, but always verify that the address is correct (or enter it manually if not detected). Native tokens are swept automatically by default, and you can also sweep existing tokens already sitting in your wallet by adding their contract addresses.
 5. If a claim rewards multiple tokens at once, you can add extra token addresses to sweep all reward tokens together in one transaction.
 6. You can add multiple claim boxes to execute different claims together at the same time.
-7. Once confirmed via **Review** and **Rescue**, the claims execute and the tokens are swept directly into your safe destination wallet.
-8. If an individual claim fails (for example, if it expired), it simply skips that claim and continues rescuing your other claims.
+7. Click **Review** to enter your compromised private key, then click **Rescue** to sweep your tokens directly into your safe wallet.
 
-### 4.2 Follow-Up Rescue & Safety Window
+### 4.2 Failure Handling & Safety Window
+
+If an individual claim fails (for example, if it expired), it simply skips that claim and continues rescuing your other claims without canceling the entire transaction.
 
 Always enter the correct payout tokens so everything sweeps in the first transaction. If a contract transfers extra or unexpected tokens that you did not enter, an automatic follow-up rescue broadcasts immediately to recover them. However, because this requires a separate transaction, there is a brief on-chain window where tokens could be intercepted. While the follow-up rescue is fast, there is no guarantee in that window, so always double-check your token addresses.
 
@@ -188,7 +189,7 @@ Always enter the correct payout tokens so everything sweeps in the first transac
 
 ## 5. NFT Mint Rescue (`/mint`)
 
-The Mint page lets you mint NFTs (ERC-721 or ERC-1155) directly from an allowlisted or eligible compromised wallet and send them straight to your safe destination wallet in one transaction.
+The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allowlisted compromised wallet, either sweeping them straight to your safe wallet in the same transaction or executing the mint on its own.
 
 ### 5.1 How It Works
 
@@ -199,8 +200,8 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) directly from an allowlis
 3. Enter the Mint Contract Address and paste the Mint Calldata (hex). The app automatically checks the network to verify that the contract exists.
 4. If the mint has a mint fee in native currency, enter the amount (like `0.01` or hex `0x...`) in the Mint Price field. Your sponsor wallet pays this fee for you. For free mints, leave this blank.
 5. In Mint + Transfer mode, if the NFT collection is the same contract as the mint contract, leave the NFT Contract Address blank. If the collection is a separate contract from the minting contract, enter the NFT contract address.
-6. You can also select and sweep existing NFTs already sitting in your wallet in the same transaction alongside your mint.
-7. Once confirmed via **Review** and **Rescue**, the sponsor wallet funds the gas and mint fee, executes the mint, and sweeps the minted NFT straight to your safe wallet.
+6. Native tokens are swept automatically by default in both modes, and you can also select and sweep existing NFTs already sitting in your wallet in the same transaction alongside your mint.
+7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the mint and sweep the NFTs directly into your safe wallet.
 
 ### 5.2 Token ID Detection & Follow-Up Rescue
 
@@ -213,7 +214,8 @@ If an NFT contract does not support any of these methods, the minted token ID is
 
 ### 5.3 Fees on Mints
 
-- NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your minted NFTs go directly to your safe wallet.
+- NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your minted and rescued NFTs go directly to your safe wallet.
+- Native Currency: The standard 15% recovery fee applies only if native tokens are swept from the wallet.
 
 ---
 
