@@ -320,4 +320,4 @@ RescueKit is deployed and verified across 19 EVM mainnets. All deployments share
 - Rescue non-transferable or soulbound tokens and NFTs that cannot be moved on-chain.
 - Protect your sponsor wallet if you leak or compromise the sponsor wallet's own private key or seed phrase.
 - Reverse transactions once confirmed on the blockchain.
-- Guarantee newly minted NFTs are swept in the same transaction if the NFT contract does not support standard discovery methods (which triggers a follow-up rescue instead).
+- Guarantee newly minted NFTs are swept in the same transaction if the NFT contract does not support standard discovery methods.
