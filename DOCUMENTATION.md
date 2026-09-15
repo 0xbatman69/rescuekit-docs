@@ -17,13 +17,13 @@
 4. [Token & NFT Rescue (`/transfer`)](#4-token--nft-rescue-transfer)
    - 4.1 How It Works
    - 4.2 Fees
-5. [Airdrop & Claims Rescue (`/claim`)](#5-airdrop--claims-rescue-claim)
+5. [NFT Mint Rescue (`/mint`)](#5-nft-mint-rescue-mint)
    - 5.1 How It Works
-   - 5.2 Follow-Up Rescues
+   - 5.2 Finding Token IDs
    - 5.3 Fees
-6. [NFT Mint Rescue (`/mint`)](#6-nft-mint-rescue-mint)
+6. [Airdrop & Claims Rescue (`/claim`)](#6-airdrop--claims-rescue-claim)
    - 6.1 How It Works
-   - 6.2 Finding Token IDs
+   - 6.2 Follow-Up Rescues
    - 6.3 Fees
 7. [DeFi Lending Rescue (`/lending`)](#7-defi-lending-rescue-lending)
    - 7.1 How It Works
@@ -136,37 +136,11 @@ The Transfer page recovers ERC-20 tokens, native coins, and NFTs already sitting
 
 ---
 
-## 5. Airdrop & Claims Rescue (`/claim`)
-
-The Claims page recovers claimable tokens from contracts like airdrops, staking, vesting, and more.
-
-### 5.1 How It Works
-
-1. Enter your compromised address and select your network.
-2. Enter the claim contract address. The app automatically checks the network to verify that the contract exists. If the contract supports common claim functions, it is detected automatically; otherwise, paste your claim calldata.
-3. If the claim requires a native fee, enter the amount (like `0.01` or hex `0x...`) in the Value field. Your sponsor wallet pays this fee for you. If no fee is required, leave it blank.
-4. The payout token is usually detected and filled in automatically, but always verify that the address is correct (or enter it manually if not detected). Native tokens are swept automatically by default, and you can also sweep existing tokens already sitting in your wallet by adding their contract addresses.
-5. If a claim rewards multiple tokens at once, you can add extra token addresses to sweep all reward tokens together in one transaction.
-6. You can add multiple claim boxes to execute different claims together at the same time.
-7. Click **Review** to enter your compromised private key, then click **Rescue** to sweep your tokens directly into your safe wallet.
-
-### 5.2 Follow-Up Rescues
-
-If an individual claim fails (for example, if it expired), it simply skips that claim and continues rescuing your other claims without canceling the entire transaction.
-
-Always enter the correct payout tokens so everything sweeps in the first transaction. If a contract transfers extra or unexpected tokens that you did not enter, an automatic follow-up rescue broadcasts immediately to recover them. However, because this requires a separate transaction, there is a brief on-chain window where tokens could be intercepted. While the follow-up rescue is fast, there is no guarantee in that window, so always double-check your token addresses.
-
-### 5.3 Fees
-
-- A 15% recovery fee is deducted on-chain directly from the claimed tokens upon successful sweep. You never pay upfront fees.
-
----
-
-## 6. NFT Mint Rescue (`/mint`)
+## 5. NFT Mint Rescue (`/mint`)
 
 The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allowlisted compromised wallet, either sweeping them straight to your safe wallet in the same transaction or executing the mint on its own.
 
-### 6.1 How It Works
+### 5.1 How It Works
 
 1. Enter your compromised wallet address, safe destination address, and select the network where the mint takes place.
 2. Select your Mint Mode from the dropdown:
@@ -178,7 +152,7 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allow
 6. Native tokens in your compromised wallet are swept automatically by default. In Mint + Transfer mode, you can also select existing NFTs in your wallet to sweep them in the same transaction alongside your mint.
 7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the mint and sweep the NFTs directly into your safe wallet.
 
-### 6.2 Finding Token IDs
+### 5.2 Finding Token IDs
 
 Because an NFT's token ID cannot be known before minting, our contract discovers it on-chain during execution using three methods:
 - Receiver hooks: Intercepts standard safe mint callbacks (`onERC721Received` and `onERC1155Received`) to capture and redirect the token ID as it is minted.
@@ -187,10 +161,36 @@ Because an NFT's token ID cannot be known before minting, our contract discovers
 
 If an NFT contract does not support any of these methods, the minted token ID is read from the transaction receipt and an automatic follow-up rescue broadcasts immediately to recover it. However, because this requires a separate transaction, there is a brief on-chain window before it confirms where the NFT could be intercepted, even though the follow-up broadcasts immediately.
 
-### 6.3 Fees
+### 5.3 Fees
 
 - NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your minted and rescued NFTs go directly to your safe wallet.
 - Native Currency: The standard 15% recovery fee applies only if native tokens are swept from the wallet.
+
+---
+
+## 6. Airdrop & Claims Rescue (`/claim`)
+
+The Claims page recovers claimable tokens from contracts like airdrops, staking, vesting, and more.
+
+### 6.1 How It Works
+
+1. Enter your compromised address and select your network.
+2. Enter the claim contract address. The app automatically checks the network to verify that the contract exists. If the contract supports common claim functions, it is detected automatically; otherwise, paste your claim calldata.
+3. If the claim requires a native fee, enter the amount (like `0.01` or hex `0x...`) in the Value field. Your sponsor wallet pays this fee for you. If no fee is required, leave it blank.
+4. The payout token is usually detected and filled in automatically, but always verify that the address is correct (or enter it manually if not detected). Native tokens are swept automatically by default, and you can also sweep existing tokens already sitting in your wallet by adding their contract addresses.
+5. If a claim rewards multiple tokens at once, you can add extra token addresses to sweep all reward tokens together in one transaction.
+6. You can add multiple claim boxes to execute different claims together at the same time.
+7. Click **Review** to enter your compromised private key, then click **Rescue** to sweep your tokens directly into your safe wallet.
+
+### 6.2 Follow-Up Rescues
+
+If an individual claim fails (for example, if it expired), it simply skips that claim and continues rescuing your other claims without canceling the entire transaction.
+
+Always enter the correct payout tokens so everything sweeps in the first transaction. If a contract transfers extra or unexpected tokens that you did not enter, an automatic follow-up rescue broadcasts immediately to recover them. However, because this requires a separate transaction, there is a brief on-chain window where tokens could be intercepted. While the follow-up rescue is fast, there is no guarantee in that window, so always double-check your token addresses.
+
+### 6.3 Fees
+
+- A 15% recovery fee is deducted on-chain directly from the claimed tokens upon successful sweep. You never pay upfront fees.
 
 ---
 
@@ -308,10 +308,10 @@ RescueKit is deployed and verified across 19 EVM mainnets. All deployments share
 ### 11.1 What RescueKit Can Do
 
 - Rescue without funding your compromised wallet with gas (your sponsor wallet pays the gas).
-- Rescue single or multiple ERC-20 tokens, native coins, and NFTs on a chain in a single transaction, or execute across multiple chains at the same time.
-- Rescue single or multiple claims on a chain in a single transaction, or execute across multiple chains at the same time.
+- Rescue single or multiple ERC-20 tokens, native coins, and NFTs on any chain in a single transaction, or execute across multiple chains at the same time.
 - Mint new NFTs and sweep existing NFTs to your safe wallet in a single transaction.
-- Rescue trapped collateral from single or multiple DeFi lending positions (which includes idle positions and positions with debt, both) on a chain in a single transaction, or execute across multiple chains at the same time.
+- Rescue single or multiple claims on any chain in a single transaction, or execute across multiple chains at the same time.
+- Rescue trapped collateral from single or multiple DeFi lending positions (which includes idle positions and positions with debt, both) on any chain in a single transaction, or execute across multiple chains at the same time.
 
 ### 11.2 What RescueKit Cannot Do
 
