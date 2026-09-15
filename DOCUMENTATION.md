@@ -1,4 +1,4 @@
-# RescueKit Documentation
+# Documentation
 
 ---
 
@@ -27,8 +27,9 @@
    - 6.3 Fees
 7. [DeFi Lending Rescue (`/lending`)](#7-defi-lending-rescue-lending)
    - 7.1 How It Works
-   - 7.2 Debt Repayment, Swaps & Idle Deposits
-   - 7.3 Fees
+   - 7.2 Debt Repayment & Idle Deposits
+   - 7.3 Swaps & Routing
+   - 7.4 Fees
 8. [Referral Program (`/refer`)](#8-referral-program-refer)
    - 8.1 How It Works
    - 8.2 Commissions & Payouts
@@ -49,21 +50,15 @@ RescueKit helps you recover trapped funds from hacked or compromised EVM wallets
 
 ### 1.1 How Sweeper Bots Work
 
-When an account's private key or seed phrase leaks, automated MEV sweeper bots monitor the address across public transaction mempools and block builders. Sweeper bots maintain persistent RPC subscriptions listening for inbound transfers:
+When an account's private key or seed phrase leaks, automated MEV sweeper bots monitor the address across public transaction mempools and block builders. Sweeper bots maintain persistent RPC subscriptions listening for inbound transfers.
 
-```
-[Attacker Bot] ──(Monitors)──> Compromised Account
-      │
-[User sends 0.01 ETH Gas] ──> Compromised Account
-      │
-[Attacker Bot detects 0.01 ETH in Mempool/Block]
-      │
-[Attacker Bot immediately sweeps the gas] ──> Sweeps 0.01 ETH to Attacker Wallet
-      │
-[Result] Compromised Account Balance = 0 ETH. Trapped Assets remain stuck.
-```
+1. User sends gas to the compromised wallet.
+2. Sweeper bot detects the incoming transfer in the mempool.
+3. Bot frontruns with a higher-priority transaction fee.
+4. Gas is swept to the attacker wallet within milliseconds.
+5. Account balance returns to 0, and trapped assets remain stuck.
 
-Under this hostile condition, traditional transfer transactions (`eth_sendRawTransaction`) fail because the account owner cannot fund the account with the native gas token required to sign and broadcast an ERC-20 `transfer` or ERC-721 `transferFrom`. Any gas sent to the address is stolen within milliseconds by the bot.
+Under this hostile condition, traditional transactions (`eth_sendRawTransaction`) fail because the account owner cannot fund the account with the native gas required to broadcast any transaction. Any gas sent to the address is stolen within milliseconds by the bot.
 
 ### 1.2 How EIP-7702 Solves This
 
@@ -131,8 +126,8 @@ The Transfer page recovers ERC-20 tokens, native coins, and NFTs already sitting
 
 ### 4.2 Fees
 
-- Tokens & Native Currency: A 15% recovery fee is deducted on-chain directly from the recovered amount during the transfer. You never pay upfront fees.
-- NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your NFTs go directly to your safe wallet.
+- For tokens and native currency, a 15% recovery fee is deducted on-chain directly from the recovered amount during the transfer.
+- NFTs (ERC-721 and ERC-1155) are rescued with a 0% protocol fee. 100% of your NFTs go directly to your safe wallet.
 
 ---
 
@@ -143,9 +138,9 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allow
 ### 5.1 How It Works
 
 1. Enter your compromised wallet address, safe destination address, and select the network where the mint takes place.
-2. Select your Mint Mode from the dropdown:
-   - Mint + Transfer: Mints the NFT and immediately sweeps it directly to your safe wallet in the same transaction.
-   - Mint only: Executes the mint function on the contract without sweeping the new NFT out of your wallet.
+2. Select your Mint Mode from the dropdown.
+   - Mint + Transfer mints the NFT and immediately sweeps it directly to your safe wallet in the same transaction.
+   - Mint only executes the mint function on the contract without sweeping the new NFT out of your wallet.
 3. Enter the Mint Contract Address and paste the Mint Calldata (hex). The app automatically checks the network to verify that the contract exists.
 4. If the mint has a mint fee in native currency, enter the amount (like `0.01` or hex `0x...`) in the Mint Price field. Your sponsor wallet pays this fee for you. For free mints, leave this blank.
 5. In Mint + Transfer mode, if the NFT collection is the same contract as the mint contract, leave the NFT Contract Address blank. If the collection is a separate contract from the minting contract, enter the NFT contract address.
@@ -154,17 +149,17 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allow
 
 ### 5.2 Finding Token IDs
 
-Because an NFT's token ID cannot be known before minting, our contract discovers it on-chain during execution using three methods:
-- Receiver hooks: Intercepts standard safe mint callbacks (`onERC721Received` and `onERC1155Received`) to capture and redirect the token ID as it is minted.
-- Return data: Decodes the token ID directly from the mint function's return value.
-- Supply queries: Checks `nextTokenId()` or `totalSupply()` on the collection contract to determine the new token ID.
+Because an NFT's token ID cannot be known before minting, our contract discovers it on-chain during execution using three methods.
+- Receiver hooks intercept standard safe mint callbacks (`onERC721Received` and `onERC1155Received`) to capture and redirect the token ID as it is minted.
+- Return data decodes the token ID directly from the mint function's return value.
+- Supply queries check `nextTokenId()` or `totalSupply()` on the collection contract to determine the new token ID.
 
 If an NFT contract does not support any of these methods, the minted token ID is read from the transaction receipt and an automatic follow-up rescue broadcasts immediately to recover it. However, because this requires a separate transaction, there is a brief on-chain window before it confirms where the NFT could be intercepted, even though the follow-up broadcasts immediately.
 
 ### 5.3 Fees
 
-- NFTs (ERC-721 & ERC-1155): Rescued with 0% protocol fee. 100% of your minted and rescued NFTs go directly to your safe wallet.
-- Native Currency: The standard 15% recovery fee applies only if native tokens are swept from the wallet.
+- NFTs (ERC-721 and ERC-1155) are rescued with a 0% protocol fee. 100% of your minted and rescued NFTs go directly to your safe wallet.
+- The standard 15% recovery fee applies only if native currency is swept from the wallet.
 
 ---
 
@@ -175,7 +170,7 @@ The Claims page recovers claimable tokens from contracts like airdrops, staking,
 ### 6.1 How It Works
 
 1. Enter your compromised address and select your network.
-2. Enter the claim contract address. The app automatically checks the network to verify that the contract exists. If the contract supports common claim functions, it is detected automatically; otherwise, paste your claim calldata.
+2. Enter the claim contract address. The app automatically checks the network to verify that the contract exists. If the contract supports common claim functions, it is detected automatically, or you can paste your claim calldata.
 3. If the claim requires a native fee, enter the amount (like `0.01` or hex `0x...`) in the Value field. Your sponsor wallet pays this fee for you. If no fee is required, leave it blank.
 4. The payout token is usually detected and filled in automatically, but always verify that the address is correct (or enter it manually if not detected). Native tokens are swept automatically by default, and you can also sweep existing tokens already sitting in your wallet by adding their contract addresses.
 5. If a claim rewards multiple tokens at once, you can add extra token addresses to sweep all reward tokens together in one transaction.
@@ -190,7 +185,7 @@ Always enter the correct payout tokens so everything sweeps in the first transac
 
 ### 6.3 Fees
 
-- A 15% recovery fee is deducted on-chain directly from the claimed tokens upon successful sweep. You never pay upfront fees.
+- A 15% recovery fee is deducted on-chain directly from the claimed tokens during the rescue transaction.
 
 ---
 
@@ -208,18 +203,23 @@ The Lending page recovers collateral trapped in lending markets (such as Aave v3
 6. If a swap is needed, you can adjust the slippage buffer (default is 1%). This buffer sets how much extra collateral is budgeted for the swap to guarantee the flash loan is fully repaid even if prices shift. Any leftover tokens from the swap are safely swept to your safe destination wallet.
 7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the recovery and sweep your net collateral directly into your safe wallet.
 
-### 7.2 Debt Repayment, Swaps & Idle Deposits
+### 7.2 Debt Repayment & Idle Deposits
 
 - When a position has debt, an uncollateralized flash loan borrows the debt amount to repay the lending market and unlock your collateral in one atomic transaction, without needing to deposit funds into the compromised wallet.
 - If your collateral is the same token as your borrowed debt, no swap takes place. The flash loan is repaid directly from the unlocked collateral.
-- If your collateral differs from your borrowed debt (such as WETH collateral with USDC debt), an in-lock swap automatically converts just enough collateral to repay the flash loan.
-- If a position requires a swap but no direct or multi-hop swap route is found, the review modal flags that no route was found, as the debt cannot be settled without an available swap route.
 - If you have collateral deposited with zero debt (an idle position), no flash loan or swap is needed. It directly withdraws and sweeps your collateral to your safe wallet.
 - If an individual debt token lacks on-chain flash loan liquidity, the review modal highlights that position so you can deselect it and continue rescuing your other positions.
 
-### 7.3 Fees
+### 7.3 Swaps & Routing
 
-- A 15% recovery fee is deducted on-chain directly from the net recovered collateral upon successful rescue. You never pay upfront fees.
+- Swaps route through major DEXes on each network (such as Uniswap and PancakeSwap).
+- If your collateral differs from your borrowed debt, direct single-hop and 2-hop routes across fee tiers are compared automatically, selecting whichever route yields the highest output and lowest price impact. If only one route exists, it uses that route. If no route is found, the review modal flags that the position cannot be settled.
+- On networks supporting Uniswap v4, swaps strictly route through canonical, hookless pools (`hooks == address(0)`). Pools with custom or third-party hooks are never used.
+- Only the minimum slice of collateral needed to clear the loan is sold, all remaining collateral is swept directly to safety. If price slippage prevents the swap from fully covering the debt down to the last wei, the entire transaction atomically reverts on-chain so zero collateral is ever lost.
+
+### 7.4 Fees
+
+- A 15% recovery fee is deducted on-chain directly from the net recovered collateral during the rescue transaction.
 
 ---
 
@@ -239,7 +239,7 @@ The Referral page lets you generate a personal referral link to earn on-chain co
 
 - The standard recovery fee on tokens and native assets is 15%. When a rescue happens through a referral link, 6% goes to the referrer and 9% goes to the protocol. The recovering user always receives their full 85% net assets whether they use a referral link or not.
 - NFTs are rescued with 0% protocol fee, so no referral fee applies to NFT rescues.
-- Payouts are instant and on-chain. There are no claim portals, points, or withdrawal delays—commissions land in your wallet the moment the rescue transaction confirms.
+- Payouts are instant and on-chain. There are no claim portals, points, or withdrawal delays, and commissions land in your wallet the moment the rescue transaction confirms.
 - Commission applies to the referred wallet's first successful rescue on each supported network. For example, if a user rescues on Ethereum, you receive commission on Ethereum. If they also rescue on Monad, you receive commission on Monad. Any subsequent rescues by the same wallet on the same network do not pay a commission.
 - Anti-self-referral checks prevent an account from earning commissions on its own rescues. The referrer address cannot be the compromised wallet, the sponsor wallet, or the safe destination address.
 - If a referrer payout address is a smart contract that rejects the transfer, the commission routes to the protocol so the rescue transaction never fails. Always use a standard wallet address (EOA) so you never miss out on payouts.
@@ -261,7 +261,7 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 ### 9.2 Referral Split
 
-- When a rescue is executed through a referral link, the 15% fee is split on-chain: 6% goes to the referrer and 9% goes to the protocol treasury. The recovering user receives their full 85% net assets.
+- When a rescue is executed through a referral link, the 15% fee is split on-chain, where 6% goes to the referrer and 9% goes to the protocol treasury. The recovering user receives their full 85% net assets.
 - If no referral link is used, or if anti-self-referral checks are triggered, the entire 15% fee goes to the protocol treasury.
 - If the referrer payout address cannot receive funds (for example, a contract that rejects the transfer), the 6% cut redirects to the protocol treasury.
 - If redirecting that 6% cut to the treasury also fails, the contract automatically adds the unpayable 6% back to the user's sweep amount, delivering 91% net recovery to the safe destination rather than leaving those tokens behind in the compromised wallet.
@@ -277,9 +277,9 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 ## 10. Supported Networks
 
-RescueKit is deployed and verified across 19 EVM mainnets. All deployments share the identical contract address: `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
+RescueKit is deployed and verified across 19 EVM mainnets. All deployments share the identical contract address `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
 
-| Network | Chain ID | Native Gas Token |
+| Network | ID | Native |
 |---|---|---|
 | Ethereum | 1 | ETH |
 | Base | 8453 | ETH |
