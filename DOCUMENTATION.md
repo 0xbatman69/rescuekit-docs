@@ -271,8 +271,12 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 ### 9.3 Transfer Order & Safe Destination Requirements
 
 - Protocol fees are collected on-chain before the remaining balance is dispatched to your safe destination wallet. This fee-first order prevents malicious contracts from engineering revert traps on the protocol treasury to rescue assets for free.
-- Always use a clean standard wallet address (EOA) or a verified Safe multisig as your safe destination. If a safe destination cannot receive transfers (such as a contract without a receive function for native currency, or an address blacklisted by centralized tokens like USDC or USDT), that transfer fails on-chain (`CallFailed`) while the fee remains collected.
+- Always use a clean standard EOA wallet address or a verified Gnosis Safe as your safe destination. If a safe destination cannot receive transfers (such as a contract without a receive function for native currency, or an address blacklisted by centralized tokens like USDC or USDT), that transfer fails on-chain (`CallFailed`) while the fee remains collected.
 - When a destination transfer fails, the remaining 85% stays behind in the compromised wallet where it remains vulnerable to sweeper bots. In that scenario, you will need to execute a new rescue with a clean, working safe wallet to recover the remaining funds, resulting in the 15% fee being charged once again on that remaining balance.
+- To prevent this risk, the app verifies your safe destination address before execution:
+  - **Standard EOA Wallets**. Recommended. Standard private key wallets have no custom code and cannot reject incoming transfers.
+  - **Gnosis Safe**. Supported if your Safe is already deployed on the rescue network and accepts native coin. If your Safe is not deployed on the target chain, the rescue is blocked to protect your funds. You must deploy your Safe on that network first or use a standard EOA wallet instead.
+  - **Other Contracts Blocked**. Custom smart contracts, smart accounts, and unverified addresses are blocked to prevent your funds from getting trapped.
 - If the entire transaction reverts on-chain, all state changes roll back completely via standard EVM execution and zero protocol fees are charged.
 
 ---
