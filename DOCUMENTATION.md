@@ -142,8 +142,8 @@ The Mint page lets you mint NFTs (ERC-721 or ERC-1155) from an eligible or allow
 
 1. Enter your compromised wallet address, safe destination address, and select the network where the mint takes place.
 2. Select your Mint Mode from the dropdown.
-   - Mint + Transfer mints the NFT and immediately sweeps it directly to your safe wallet in the same transaction.
-   - Mint only executes the mint function on the contract without sweeping the new NFT out of your wallet.
+   - Mint only: executes the mint function on the contract without sweeping the new NFT out of your wallet.
+   - Mint + Transfer: mints the NFT and immediately sweeps it directly to your safe wallet in the same transaction.
 3. Enter the Mint Contract Address and paste the Mint Calldata (hex). The app automatically checks the network to verify that the contract exists.
 4. If the mint has a mint fee in native currency, enter the amount (like `0.01` or hex `0x...`) in the Mint Price field. Your sponsor wallet pays this fee for you. For free mints, leave this blank.
 5. In Mint + Transfer mode, if the NFT collection is the same contract as the mint contract, leave the NFT Contract Address blank. If the collection is a separate contract from the minting contract, enter the NFT contract address.
@@ -283,7 +283,7 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 - You can configure custom RPC endpoints for any supported network by clicking the RPC settings icon next to the network selector.
 - When you set a custom RPC for a network, every feature that makes RPC calls on that network uses your custom endpoint.
-- Custom RPCs are especially useful for fast receipt polling during follow-up rescues. When an NFT mint or claim transaction confirms, the receipt logs are parsed to detect minted token IDs or unswept reward tokens and broadcast the follow-up sweep as fast as possible.
+- Custom RPCs are especially useful for fast receipt polling during follow-up rescues. When an [**NFT Mint**](#5-nft-mint-rescue-mint) or [**Claim**](#6-airdrop--claims-rescue-claim) transaction confirms, the receipt logs are checked to detect minted token IDs or unswept tokens and broadcast the follow-up sweep as fast as possible.
 - Public RPCs often have higher latency when polling receipts and logs compared to private custom endpoints.
 - Custom endpoints also help avoid occasional public RPC rate limits.
 - Before saving, the endpoint is tested for connectivity, latency, and chain ID match to ensure it belongs to the selected network.
