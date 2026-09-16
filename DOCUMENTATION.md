@@ -56,10 +56,10 @@ RescueKit helps you recover trapped funds from hacked or compromised EVM wallets
 When an account's private key or seed phrase leaks, automated MEV sweeper bots monitor the address across public transaction mempools and block builders. Sweeper bots maintain persistent RPC subscriptions listening for inbound transfers.
 
 1. User sends gas to the compromised wallet.
-2. Sweeper bot detects the incoming transfer in the mempool.
-3. Bot frontruns with a higher-priority transaction fee.
-4. Gas is swept to the attacker wallet within milliseconds.
-5. Account balance returns to 0, and trapped assets remain stuck.
+2. Sweeper bot detects the incoming transfer.
+3. Bot drains the gas to the attacker wallet within milliseconds.
+4. The user never gets a chance to broadcast a transaction to move their funds.
+5. Trapped assets remain stuck.
 
 Under this hostile condition, traditional transactions (`eth_sendRawTransaction`) fail because the account owner cannot fund the account with the native gas required to broadcast any transaction. Any gas sent to the address is stolen within milliseconds by the bot.
 
