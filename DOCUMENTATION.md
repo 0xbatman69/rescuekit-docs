@@ -37,10 +37,13 @@
    - 9.1 Fee Breakdown by Asset
    - 9.2 Referral Split
    - 9.3 Transfer Order & Safe Destination Requirements
-10. [Supported Networks](#10-supported-networks)
-11. [What RescueKit Can & Cannot Do](#11-what-rescuekit-can--cannot-do)
-    - 11.1 What RescueKit Can Do
-    - 11.2 What RescueKit Cannot Do
+10. [Custom RPC & Transaction Broadcasting](#10-custom-rpc--transaction-broadcasting)
+    - 10.1 Custom RPC
+    - 10.2 Transaction Broadcasting
+11. [Supported Networks](#11-supported-networks)
+12. [What RescueKit Can & Cannot Do](#12-what-rescuekit-can--cannot-do)
+    - 12.1 What RescueKit Can Do
+    - 12.2 What RescueKit Cannot Do
 
 ---
 
@@ -274,7 +277,29 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 ---
 
-## 10. Supported Networks
+## 10. Custom RPC & Transaction Broadcasting
+
+### 10.1 Custom RPC
+
+- You can configure custom RPC endpoints for any supported network by clicking the RPC settings icon next to the network selector.
+- When you set a custom RPC for a network, every feature that makes RPC calls on that network uses your custom endpoint.
+- Custom RPCs are especially useful for fast receipt polling during follow-up rescues. When an NFT mint or claim transaction confirms, the receipt logs are parsed to detect minted token IDs or unswept reward tokens and broadcast the follow-up sweep as fast as possible.
+- Public RPCs often have higher latency when polling receipts and logs compared to private custom endpoints.
+- Custom endpoints also help avoid occasional public RPC rate limits.
+- Before saving, the endpoint is tested for connectivity, latency, and chain ID match to ensure it belongs to the selected network.
+- Custom URLs are stored locally in your browser, and you can reset any network back to its default public RPC at any time with a single click.
+
+### 10.2 Transaction Broadcasting
+
+- On Ethereum, transactions broadcast through MEV Blocker first, immediately falling back to Flashbots if needed.
+- On BSC, transactions broadcast through 48 Club.
+- If private relay broadcast fails on Ethereum or BSC, the rescue stops with an error instead of using public RPCs to keep transactions out of the public mempool.
+- If you set a custom RPC for Ethereum or BSC, this private relay broadcast is not overwritten.
+- On all other chains, transactions broadcast through your custom RPC, immediately falling back to default backup RPCs if it fails or times out.
+
+---
+
+## 11. Supported Networks
 
 RescueKit is deployed and verified across 19 EVM mainnets. All deployments share the identical contract address `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
 
@@ -302,9 +327,9 @@ RescueKit is deployed and verified across 19 EVM mainnets. All deployments share
 
 ---
 
-## 11. What RescueKit Can & Cannot Do
+## 12. What RescueKit Can & Cannot Do
 
-### 11.1 What RescueKit Can Do
+### 12.1 What RescueKit Can Do
 
 - Rescue without funding your compromised wallet with gas (your sponsor wallet pays the gas).
 - Rescue single or multiple ERC-20 tokens, native coins, and NFTs on any chain in a single transaction, or execute across multiple chains at the same time.
@@ -312,7 +337,7 @@ RescueKit is deployed and verified across 19 EVM mainnets. All deployments share
 - Rescue single or multiple claims on any chain in a single transaction, or execute across multiple chains at the same time.
 - Rescue trapped collateral from single or multiple DeFi lending positions (which includes idle positions and positions with debt, both) on any chain in a single transaction, or execute across multiple chains at the same time.
 
-### 11.2 What RescueKit Cannot Do
+### 12.2 What RescueKit Cannot Do
 
 - Recover funds that were already stolen or transferred out before your rescue.
 - Recover funds if you enter an attacker-controlled or compromised safe destination address.
