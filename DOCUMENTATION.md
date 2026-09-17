@@ -203,7 +203,7 @@ The Lending page recovers collateral trapped in lending markets (such as Aave v3
 3. Select the positions you want to recover. You can select multiple positions on the same network, or positions across different networks.
 4. Enter your clean safe destination address.
 5. Click **Review**. The app verifies that there is enough on-chain flash loan liquidity to borrow your debt tokens, calculates swap routes (if collateral differs from debt), and verifies sponsor gas.
-6. If a swap is needed, you can adjust the slippage buffer (default is 1%). This buffer sets how much extra collateral is budgeted for the swap to guarantee the flash loan is fully repaid even if prices shift. Any leftover tokens from the swap are safely swept to your safe destination wallet.
+6. If a swap is needed, the review modal displays **Est. Output (Debt)** for the tokens needed to cover your debt at current DEX prices. You can adjust the slippage buffer (default is 1%). Rather than reducing your received tokens, this buffer budgets extra collateral for the swap to guarantee the flash loan is fully repaid even if prices shift, with any leftover tokens safely swept to your safe destination wallet.
 7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the recovery and sweep your net collateral directly into your safe wallet.
 
 ### 7.2 Debt Repayment & Idle Deposits
@@ -220,7 +220,34 @@ The Lending page recovers collateral trapped in lending markets (such as Aave v3
 - On networks supporting Uniswap v4, swaps strictly route through canonical, hookless pools (`hooks == address(0)`). Pools with custom or third-party hooks are never used.
 - Only the minimum slice of collateral needed to clear the loan is sold, all remaining collateral is swept directly to safety. If price slippage prevents the swap from fully covering the debt down to the last wei, the entire transaction atomically reverts on-chain so zero collateral is ever lost.
 
-### 7.4 Fees
+### 7.4 Supported Protocols by Chain
+
+Supported lending protocols across each network today. This list is kept updated as new protocols are added.
+
+| Network | Supported Protocols |
+|---|---|
+| Ethereum | Aave v3, Morpho Blue, Compound v3, Moonwell |
+| Base | Aave v3, Morpho Blue, Compound v3, Moonwell |
+| BNB Chain | Venus Protocol, Aave v3 |
+| Arbitrum One | Aave v3, Morpho Blue, Compound v3 |
+| Arc | Morpho Blue |
+| Polygon | Aave v3, Morpho Blue, Compound v3 |
+| Optimism | Aave v3, Morpho Blue, Compound v3, Moonwell |
+| Monad | Aave v3, Morpho Blue, Curvance |
+| Sonic | Aave v3 |
+| Robinhood | Morpho Blue |
+| Berachain | Morpho Blue (Bend) |
+| MegaETH | Aave v3 |
+| Linea | ZeroLend, Compound v3 |
+| Ink | Aave v3 |
+| Unichain | Compound v3, Morpho Blue |
+| Sei | — |
+| World Chain | Morpho Blue |
+| Somnia | — |
+| Plasma | Aave v3 |
+| Plume | — |
+
+### 7.5 Fees
 
 - A 15% recovery fee is deducted on-chain directly from the net recovered collateral during the rescue transaction.
 
@@ -305,7 +332,7 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 ## 11. Supported Networks
 
-RescueKit is deployed and verified across 19 EVM mainnets. All deployments share the identical contract address `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
+RescueKit is deployed and verified across 20 EVM mainnets. All deployments share the identical contract address `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
 
 | Network | ID | Native |
 |---|---|---|
@@ -313,6 +340,7 @@ RescueKit is deployed and verified across 19 EVM mainnets. All deployments share
 | Base | 8453 | ETH |
 | BNB Chain | 56 | BNB |
 | Arbitrum One | 42161 | ETH |
+| Arc | 5042 | USDC |
 | Polygon | 137 | POL |
 | Optimism | 10 | ETH |
 | Monad | 143 | MON |
