@@ -204,7 +204,7 @@ The Lending page recovers collateral trapped in lending markets (such as Aave v3
 4. Enter your clean safe destination address.
 5. Click **Review**. The app verifies that there is enough on-chain flash loan liquidity to borrow your debt tokens, calculates swap routes (if collateral differs from debt), and verifies sponsor gas.
 6. If a swap is needed, the review modal displays **Est. Output (Debt)** for the tokens needed to cover your debt at current DEX prices. You can adjust the slippage buffer (default is 1%). Rather than reducing your received tokens, this buffer budgets extra collateral for the swap to guarantee the flash loan is fully repaid even if prices shift, with any leftover tokens safely swept to your safe destination wallet.
-7. Click **Review** to enter your compromised private key, then click **Rescue** to execute the recovery and sweep your net collateral directly into your safe wallet.
+7. Enter your compromised private key, then click **Rescue** to execute the recovery and sweep your net collateral directly into your safe wallet.
 
 ### 7.2 Debt Repayment & Idle Deposits
 
