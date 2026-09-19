@@ -80,13 +80,27 @@ RescueKit eliminates this attack vector entirely using **EIP-7702**:
 
 ## Supported Networks
 
-RescueKit is deployed and operational across 6 EVM networks:
+RescueKit is deployed and operational across 20 EVM mainnets. All deployments share the identical contract address `0x0000000008732229ED6Dca402A3C9EbbF31068E7`.
 
-| Chain Name | Chain ID | Native Gas Token | EIP-7702 Status | Private Relay Protection | Block Explorer |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Ethereum** | `1` | ETH | Active | Flashbots Protect (`https://rpc.flashbots.net`) | [Etherscan](https://etherscan.io) |
-| **Base** | `8453` | ETH | Active | Standard Sequencer Pool | [Basescan](https://basescan.org) |
-| **Optimism** | `10` | ETH | Active | Standard Sequencer Pool | [Optimistic Etherscan](https://optimistic.etherscan.io) |
-| **BNB Smart Chain** | `56` | BNB | Active | 48 Club Private Relay (`https://rpc.48.club`) | [BscScan](https://bscscan.com) |
-| **Polygon** | `137` | POL / MATIC | Active | Standard Failover Pool | [Polygonscan](https://polygonscan.com) |
-| **Monad** | `143` | MON | Active | Standard Failover Pool | [MonadScan](https://monadscan.com) |
+| Chain Name | Chain ID | Native Gas Token | EIP-7702 Status | Block Explorer |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ethereum** | `1` | ETH | Active | [Etherscan](https://etherscan.io/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Base** | `8453` | ETH | Active | [Basescan](https://basescan.org/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **BNB Smart Chain** | `56` | BNB | Active | [BscScan](https://bscscan.com/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Arbitrum One** | `42161` | ETH | Active | [Arbiscan](https://arbiscan.io/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Arc** | `5042` | USDC | Active | [Arc Etherscan](https://arc.etherscan.io/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Polygon** | `137` | POL | Active | [Polygonscan](https://polygonscan.com/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Optimism** | `10` | ETH | Active | [Optimistic Etherscan](https://optimistic.etherscan.io/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Monad** | `143` | MON | Active | [MonadScan](https://monadscan.com/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Sonic** | `146` | S | Active | [SonicScan](https://sonicscan.org/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Robinhood** | `4663` | ETH | Active | [Robinhood Etherscan](https://robin.etherscan.io/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Berachain** | `80094` | BERA | Active | [Berascan](https://berascan.com/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **MegaETH** | `4326` | ETH | Active | [MegaETH Etherscan](https://mega.etherscan.io/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Linea** | `59144` | ETH | Active | [Lineascan](https://lineascan.build/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Ink** | `57073` | ETH | Active | [Ink Explorer](https://explorer.inkonchain.com/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7) |
+| **Unichain** | `130` | ETH | Active | [Uniscan](https://uniscan.xyz/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Sei** | `1329` | SEI | Active | [SeiScan](https://seiscan.io/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **World Chain** | `480` | ETH | Active | [Worldscan](https://worldscan.org/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Somnia** | `5031` | SOMI | Active | [Somnia Explorer](https://explorer.somnia.network/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7) |
+| **Plasma** | `9745` | XPL | Active | [Plasmascan](https://plasmascan.to/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7#code) |
+| **Plume** | `98866` | PLUME | Active | [Plume Explorer](https://explorer.plume.org/address/0x0000000008732229ED6Dca402A3C9EbbF31068E7) |
