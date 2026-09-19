@@ -65,7 +65,7 @@ Under this hostile condition, traditional transactions (`eth_sendRawTransaction`
 
 ### 1.2 How EIP-7702 Solves This
 
-EIP-7702 allows an ordinary wallet (EOA) to temporarily delegate its execution to a smart contract without changing account ownership. By signing an authorization designating the RescueKit contract (`0x0000000004C9B572E8aB03C7A7377AaadEfd3502`), the wallet gains the ability to execute batch rescue operations.
+EIP-7702 allows an ordinary wallet (EOA) to temporarily delegate its execution to a smart contract without changing account ownership. By signing an authorization designating the RescueKit contract (`0x0000000008732229ED6Dca402A3C9EbbF31068E7`), the wallet gains the ability to execute batch rescue operations.
 
 Crucially, EIP-7702 transactions can be sponsored by a separate, clean account (the "Sponsor Wallet"). The sponsor wallet pays 100% of the gas needed to broadcast and execute the rescue. Because the compromised account never receives or holds native gas, sweeper bots never get a chance to trigger.
 
@@ -332,7 +332,7 @@ RescueKit collects fees on-chain during execution. Understanding how fees are ch
 
 ## 11. Supported Networks
 
-RescueKit is deployed and verified across 20 EVM mainnets. All deployments share the identical contract address `0x0000000004C9B572E8aB03C7A7377AaadEfd3502`.
+RescueKit is deployed and verified across 20 EVM mainnets. All deployments share the identical contract address `0x0000000008732229ED6Dca402A3C9EbbF31068E7`.
 
 | Network | ID | Native |
 |---|---|---|
